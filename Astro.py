@@ -1,16 +1,18 @@
 from globals import *
 
+
 class Astro:
     G = 0.000296329    # AU^3 d^-2 Mo^-1
-    Msol_Me = 333000./10000 # Mogelfaktor
-    Me_Msol = 1/Msol_Me
+    Msol_Me = 333000. / 10000  # Mogelfaktor
+    Me_Msol = 1 / Msol_Me
     sigma = 5.67e-08   # W m^-2 K^-4
     Rsol = 695000000   # m
     Lsol = 3.846e26    # Watt
     Msol = 1.988e30    # kg
-    rho  = 1000        # kg m^-3
+    rho = 1000        # kg m^-3
     Mearth = 6e24   # kg
     Rearth = 6370000   # m
+
     def __init__(self):
         return
 
@@ -25,19 +27,19 @@ class Astro:
         return m**a
 
     @staticmethod
-    def TitiusBode(i):       # orbital radius of the i-th planet of the solar system
-        return 0.4 + 0.3*2**i
+    def TitiusBode(i, rin=0.4):       # orbital radius of the i-th planet of the solar system
+        return rin + rin * 2**i
 
     @staticmethod
     def MassLuminosity(M):
         if M < 0.43:
-            L = 0.23*M**2.3
+            L = 0.23 * M**2.3
         elif M < 2:
             L = M**4
         elif M < 20:
-            L = 1.5*M**3.5
+            L = 1.5 * M**3.5
         else:
-            L = 3200*M
+            L = 3200 * M
         return L
 
     @staticmethod
@@ -49,8 +51,8 @@ class Astro:
         return R
 
     @staticmethod
-    def StefanBoltzmann(L,R):  # Temperature of a star
-        return ((L*Astro.Lsol)/(4*math.pi*Astro.sigma*(R*Astro.Rsol)**2))**0.25
+    def StefanBoltzmann(L, R):  # Temperature of a star
+        return ((L * Astro.Lsol) / (4 * math.pi * Astro.sigma * (R * Astro.Rsol)**2))**0.25
 
     @staticmethod
     def SpectralClass(T):
@@ -79,9 +81,9 @@ class Astro:
         return [SC, color]
 
     @staticmethod
-    def HillSphere(a,m,M): # two body distance, body mass, parent mass
-        return a*(m/(3*M))**(0.333)
+    def HillSphere(a, m, M):  # two body distance, body mass, parent mass
+        return a * (m / (3 * M))**(0.333)
 
     @staticmethod
     def PlanetRadius(M):
-        return 1./Astro.Rearth*((3.*M*Astro.Mearth)/(4.*math.pi*Astro.rho))**(0.333)
+        return 1. / Astro.Rearth * ((3. * M * Astro.Mearth) / (4. * math.pi * Astro.rho))**(0.333)

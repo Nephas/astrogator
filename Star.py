@@ -2,13 +2,16 @@ from globals import *
 from Planet import Planet
 
 class Star:
-    def __init__(self, parent, system, mass, cylpos = [0,0]):
+    def __init__(self, parent, root, mass, cylpos = [0,0], name = "unknown"):
         self.parent = parent
-        self.system = system
+        self.root = root
+        self.name = name
+
         self.cylstart = np.array(cylpos)    # parent related coordinates r, phi
         self.cylpos = np.array(cylpos)      # running polar position
-        self.cylvel = np.array([0,0])      # now in rad/day
-        self.mappos = np.array([0,0])                  # absolute cartesian position now in AU
+        self.cylvel = np.array([0,0])       # now in rad/day
+        self.mappos = np.array([0,0])       # absolute cartesian position now in AU
+
         self.planet = []
         self.mass = mass
         self.scorbit = [0,0]          # stable circular orbit ranges
@@ -33,7 +36,7 @@ class Star:
         self.image = pg.Surface([100,100], flags = pg.SRCALPHA)
         pg.draw.circle(self.image, self.spectral[COLOR], [50,50], 50)
 
-        self.scorbit[MIN] = 0.5
+        self.scorbit[MIN] = 0.25
         if self.scorbit[MAX] == 0:
             self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R],self.mass,self.parent.mass)
 
@@ -42,36 +45,38 @@ class Star:
             planetorbit = Astro.TitiusBode(i)                  # Titius Bode's law
             if planetorbit > self.scorbit[MAX]: break
             if planetorbit > self.scorbit[MIN]:
-                self.planet.append(Planet(self, self.system, [planetorbit, rd.random()*2*np.pi]))
+                self.planet.append(Planet(self, self.root, [planetorbit, rd.random()*2*np.pi], self.name + chr(97+n)))
                 self.planet[n].Create()
                 n += 1
             i += 1
 
-    def Draw(self,screen):
+    def Draw(self,screen, body=True, potential=False):
 
         # star hill sphere
-        linecolor = pg.Color("white")
-        linecolor.a = 15
-        pg.draw.circle(screen.map, linecolor, screen.Map2Screen(self.mappos,self.system.time), int(self.scorbit[MAX]*screen.mapscale))
-        linecolor.a = 0
-        pg.draw.circle(screen.map, linecolor, screen.Map2Screen(self.mappos,self.system.time), int(self.scorbit[MIN]*screen.mapscale))
-        linecolor.a = 255
+        if potential:
+            linecolor = pg.Color("white")
+            linecolor.a = 15
+            pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MAX]*screen.mapscale))
+            linecolor.a = 0
+#            pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MIN]*screen.mapscale))
+            linecolor.a = 255
 
-        for planet in self.planet: planet.Draw(screen)
+        for planet in self.planet: planet.Draw(screen,potential=potential)
 
-        if not Screen.Contains(screen.Map2Screen(self.mappos,self.system.time)):
+        if not Screen.Contains(screen.Map2Screen(self.mappos,self.root.time)):
             return
 
         # star trail
-        linecolor = pg.Color("blue")
-        length = min(self.system.body[self.system.parent.focus].torbit/3, self.torbit/3)
-        times = np.linspace(self.system.time - length, self.system.time, 20)
-        mappos = screen.Map2Screen(self.MapPos(times), times)
-        pg.draw.lines(screen.map, linecolor, False, mappos)
+        if potential:
+            linecolor = pg.Color("blue")
+            length = min(self.root.body[self.root.main.focus].torbit/3, self.torbit/3)
+            times = np.linspace(self.root.time - length, self.root.time, 20)
+            mappos = screen.Map2Screen(self.MapPos(times), times)
+            pg.draw.lines(screen.potential, linecolor, False, mappos)
 
         # star image
         image = pg.transform.rotozoom(self.image, 0, screen.starscale*self.radius)
-        screen.map.blit(image, screen.Map2Screen(self.mappos,self.system.time) - np.array(image.get_size())*0.5)
+        screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
 
     def MapPos(self, time = 0): # time in days
         # Get positions for a list of times:
@@ -97,6 +102,14 @@ class Star:
 
     def Move(self, dt):
         self.cylpos = self.cylpos + dt*self.cylvel
-        self.mappos = self.MapPos(self.system.time)
+        self.mappos = self.MapPos(self.root.time)
 
         for planet in self.planet: planet.Move(dt)
+
+    def printTerm(self, indent):
+        print(indent + "Mass: " + str(self.mass))
+        print(indent + "Name: Star " + str(self.name))
+#        print(indent + "Comps:" )
+#        indent += "   "
+#        for comp in self.comp:
+#            comp.printTerm(indent)

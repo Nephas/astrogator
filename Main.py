@@ -17,36 +17,39 @@ class Main:
         pg.key.set_repeat(200,50)
 
         pg.GAMETIC = 25
-        pg.MAPRENDER = 26
+        pg.BACKRENDER = 26
         pg.GUIRENDER = 27
 
-        self.TPS = 25
-        self.FPS = 25
+        self.TPS = 30
+        self.FPS = 15
 
         pg.time.set_timer(pg.GAMETIC, 1000/self.TPS)
-        pg.time.set_timer(pg.MAPRENDER, 1000/self.FPS)
+        pg.time.set_timer(pg.BACKRENDER, 1000/self.FPS)
         pg.time.set_timer(pg.GUIRENDER, 500)
 
         self.focus = 0
         self.stepsize = [0.1, 10]        # stepsize in days/timestep, max
 
         self.screen = Screen(self)      # Main display Surface
-        self.world = System(self)
+        self.world = System(self,self)
         self.world.Create()
         self.world.Move(self.stepsize[0])
+        self.world.printTerm(" ")
 
     def Loop(self):
         while True:
             pg.time.wait(2)
-            t=tic()
+#            t=tic()
             for i, event in enumerate(pg.event.get()):
                 if event.type == pg.QUIT:
                     sys.exit()
                 elif event.type == pg.GAMETIC:
                     self.world.Move(self.stepsize[0])
-                elif event.type == pg.MAPRENDER:
-                    self.screen.Render()
-
+                    self.screen.RenderMap()
+                    self.screen.RenderAll()
+                elif event.type == pg.BACKRENDER:
+                    self.screen.RenderBack()
+                    self.screen.RenderAll()
                 elif event.type == pg.GUIRENDER:
                     self.screen.RenderGui()
 
@@ -55,11 +58,7 @@ class Main:
                     self.HandleKey(pg.key.name(event.key))
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     print(pg.mouse.get_pos())
-
-#                if i >= 20:
-#                    pg.event.clear()
-#                    break
-            toc(t)
+#            toc(t)
 
 
     def HandleKey(self, keyname):
@@ -79,7 +78,8 @@ class Main:
             self.screen.starscale *= 4./5
             self.screen.planetscale *= 4./5
             self.screen.moonscale *= 4./5
-
+        elif keyname == "p":
+            self.togglePotential()
         elif keyname == "right":
             self.world.ship[0].orientation += 0.2
         elif keyname == "left":
@@ -100,7 +100,6 @@ class Main:
         elif keyname == "r":
             self.world = System(self)
             self.world.Create()
-
 
 
 main = Main()

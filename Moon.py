@@ -1,45 +1,69 @@
 from globals import *
 
 class Moon:
-    def __init__(self, parent, cylpos=[0,0]):
+    def __init__(self, parent, root, cylpos=[0,0]):
         self.parent = parent
-        self.cylpos = np.array(cylpos)    # parent related coordinates r in AU, phi in rad
-        self.mappos = []  # cartesian position
-        self.cylvel = np.array([0,0])  # radial velocity in AU/day angular velocity in rad/day
+        self.root = root
+        self.cylstart = np.array(cylpos)    # parent related coordinates r, phi
+        self.cylpos = np.array(cylpos)      # running polar position
+        self.cylvel = None                  # now in rad/day
+        self.mappos = None                  # absolute cartesian position now in AU
         self.mass = 0
         self.image = None
         self.radius = 1
 
     def Create(self):
         self.mass = rd.random()/10
-        self.mappos.insert(0,Screen.Pol2Cart(self.cylpos) + self.parent.mappos[0])
 
         #setup circular orbit
-        torbit = np.sqrt(self.cylpos[R]**3/(2.27e-07*self.parent.mass)) # orbital period in years from parent mass
-        self.cylvel = np.array([0,2*np.pi/(torbit*365)])
-        print(self.mass)
+        self.torbit = 365*np.sqrt(self.cylpos[R]**3/self.parent.mass) # orbital period in days from parent mass
+        self.cylvel = np.array([0,2*np.pi/self.torbit])
 
         self.image = pg.Surface([100,100], flags = pg.SRCALPHA)
         pg.draw.circle(self.image, pg.Color("blue"), [50,50], 50)
         pg.draw.rect(self.image, TRANSPARENCY, pg.Rect(50,0,50,100))
 
 
-    def Draw(self,screen):
-        linecolor = pg.Color("darkblue")
-#        for step in range(1,len(self.mappos)):
-#            pg.draw.line(screen.map, linecolor, screen.Map2Screen(self.mappos[step-1],step-1),screen.Map2Screen(self.mappos[step],step))
-#            linecolor.a -= screen.alphastep
-
-        if not Screen.Contains(screen.Map2Screen(self.mappos,self.system.time)):
+    def Draw(self,screen,potential=False):
+        if not Screen.Contains(screen.Map2Screen(self.mappos,self.root.time)):
             return
 
-        image = pg.transform.rotozoom(self.image, -self.parent.cylpos[PHI]/(2*np.pi)*360, screen.moonscale*self.radius)
-        screen.map.blit(image, screen.Map2Screen(self.mappos[0]) - np.array(image.get_size())*0.5)
+        potential=True
+        # planet trail
+        if potential:
+            linecolor = pg.Color("darkgray")
+            length = min(self.root.body[self.root.main.focus].torbit/6, self.torbit/6)
+            times = np.linspace(self.root.time - length, self.root.time, 10)
+            mappos = screen.Map2Screen(self.MapPos(times), times)
+            pg.draw.lines(screen.potential, linecolor, False, mappos)
 
-#        screen.display.blit(pg.transform.rotate(self.image, -self.parent.pos[PHI]/(2*math.pi)*360), vec.Sub(screen.Map2Screen(self.mappos),[self.image.get_width()/2,self.image.get_height()/2]))
+        if screen.moonscale > 0.02:
+            image = pg.transform.rotozoom(self.image, -self.parent.cylpos[PHI]/(2*np.pi)*360, screen.moonscale*self.radius)
+            screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+
+    def MapPos(self, time = 0): # time in days
+        # Get positions for a list of times:
+        # [t1]    [x1,y1]
+        # [t2] -> [x2,y2]
+        # [...]   [...]
+        if type(time) == list:
+            return [Screen.Pol2Cart(self.cylstart + t*self.cylvel) + self.parent.MapPos(t) for t in time]
+        elif type(time) == np.ndarray:
+            t = np.ndarray((len(time),2))
+            t[:,R] = time
+            t[:,PHI] = time
+
+            cs = np.ndarray((len(time),2))
+            cs[:,:] = self.cylstart[:]
+
+            cv = np.ndarray((len(time),2))
+            cv[:,:] = self.cylvel[:]
+
+            return Screen.Pol2Cart(cs+cv*t) + self.parent.MapPos(time)
+        else:
+            return Screen.Pol2Cart(self.cylstart + time*self.cylvel) + self.parent.MapPos(time)
+
 
     def Move(self, dt):
-        self.cylpos[PHI] += dt*self.cylvel[PHI]
-        self.mappos.insert(0,Screen.Pol2Cart(self.cylpos) + self.parent.mappos[0])
-        if len(self.mappos) >= Screen.TRAILLENGTH:
-            self.mappos.pop()
+        self.cylpos = self.cylpos + dt*self.cylvel
+        self.mappos = self.MapPos(self.root.time)

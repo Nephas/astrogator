@@ -15,6 +15,7 @@ class Screen:
 
         self.back = pg.Surface(Screen.SIZE)
         self.back.fill(pg.Color("black"))
+        self.potential = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
         self.map = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
         self.gui = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
         self.font = pg.font.SysFont("Arial", 12)
@@ -23,11 +24,11 @@ class Screen:
         self.offset = 0.5*Screen.SIZE
         self.starscale = 0.05
         self.planetscale = 0.01
-        self.moonscale = 0.005
+        self.moonscale = 0.01
 
-    def Render(self, gui=False):
-        self.RenderMap()
+    def RenderAll(self, gui=False):
         self.display.blit(self.back, (0,0))
+        self.display.blit(self.potential, (0,0))
         self.display.blit(self.map, (0,0))
         self.display.blit(self.gui, (0,0))
 
@@ -35,7 +36,11 @@ class Screen:
 
     def RenderMap(self):
         self.map.fill(pg.Color(0,0,0,0))
-        self.parent.world.Draw(self)
+        self.parent.world.Draw(self, potential=False)
+
+    def RenderBack(self):
+        self.potential.fill(pg.Color(0,0,0,0))
+        self.parent.world.Draw(self, potential=True)
 
     def RenderGui(self):
         self.gui.fill(pg.Color(0,0,0,0))
@@ -46,11 +51,15 @@ class Screen:
         for i in range(-5,7):
             pg.draw.circle(self.gui, linecolor, (Screen.SIZE[X]/2,Screen.SIZE[Y]/2), int(np.floor(self.mapscale*2**i))+1, 1)
 
-        tstep = self.font.render("Time-step: " + str(self.parent.stepsize[0]*self.parent.TPS) + " days/s", 1, pg.Color("white"))
-        t = self.font.render("Time: " + str(self.parent.world.time) + " days", 1, pg.Color("white"))
-        # put the label object on the screen at point x=100, y=100
-        self.gui.blit(tstep, (10, 10))
-        self.gui.blit(t, (10, 30))
+        info = [
+            self.font.render("Time-step: " + str(self.parent.stepsize[0]*self.parent.TPS) + " days/s", 1, pg.Color("white")),
+            self.font.render("Time: " + str(self.parent.world.time) + " days", 1, pg.Color("white")),
+            self.font.render("Moonscale: " + str(self.moonscale), 1, pg.Color("white")),
+            self.font.render("Planetscale: " + str(self.planetscale), 1, pg.Color("white")),
+            self.font.render(self.parent.world.body[self.parent.focus].name, 1, pg.Color("white"))]
+
+        for i,line in enumerate(info):
+            self.gui.blit(line, (10, i*20 +10))
 
     def Map2Screen(self, mappos, time = 0):    # Coordinate transformation from mapspace to screenspace
         refbody = self.parent.world.body[self.parent.focus]

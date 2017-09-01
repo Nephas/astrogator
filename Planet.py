@@ -2,9 +2,11 @@ from globals import *
 from Moon import Moon
 
 class Planet:
-    def __init__(self, parent, system, cylpos=[0,0]):
+    def __init__(self, parent, root, cylpos=[0,0], name = "unknown"):
         self.parent = parent
-        self.system = system
+        self.root = root
+        self.name = name
+
         self.moon = []
         self.cylstart = np.array(cylpos)    # parent related coordinates r, phi
         self.cylpos = np.array(cylpos)      # running polar position
@@ -25,37 +27,59 @@ class Planet:
         self.torbit = 365*np.sqrt(self.cylpos[R]**3/self.parent.mass) # orbital period in days from parent mass
         self.cylvel = np.array([0,2*np.pi/self.torbit])
 
-        # for i in range(rd.randint(0,3)):
-        #     self.moon.append(Moon(self, [(i+1)*0.005,rd.random()*2*math.pi]))
-        #     self.moon[i].Create()
+        self.scorbit[MAX] = 0.1*Astro.HillSphere(self.cylpos[R],self.mass*Astro.Me_Msol,self.parent.mass)
+        self.scorbit[MIN] = 0.05*self.scorbit[MAX]
 
-        self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R],self.mass*Astro.Me_Msol,self.parent.mass)
+        # create moons
+        i = 0; n = 0
+        while True:
+            moonorbit = Astro.TitiusBode(i,self.scorbit[MIN])           # Titius Bode's law
+            print(moonorbit)
+            if moonorbit > self.scorbit[MAX]: break
+            if moonorbit > self.scorbit[MIN]:
+                self.moon.append(Moon(self, self.root, [moonorbit, rd.random()*2*np.pi]))
+                self.moon[n].Create()
+                n += 1
+            i += 1
+
         self.image = pg.Surface([100,100], flags = pg.SRCALPHA)
         pg.draw.circle(self.image, pg.Color("red"), [50,50], 50)
         pg.draw.rect(self.image, TRANSPARENCY, pg.Rect(50,0,50,100))
 
 
-    def Draw(self,screen):
+    def Draw(self, screen, body=True, potential=False):
         # if screen.moonscale > 2:
-        for moon in self.moon: moon.Draw(screen)
 
-        if not Screen.Contains(screen.Map2Screen(self.mappos,self.system.time)):
+        if not Screen.Contains(screen.Map2Screen(self.mappos,self.root.time)):
             return
 
-        # planet trail
-        linecolor = pg.Color("orange")
-        length = min(self.system.body[self.system.parent.focus].torbit/4, self.torbit/4)
-        times = np.linspace(self.system.time - length, self.system.time, 20)
-        mappos = screen.Map2Screen(self.MapPos(times), times)
-        pg.draw.lines(screen.map, linecolor, False, mappos)
+        # # planet hill sphere
+        if potential:
+        #     linecolor = pg.Color("orange")
+        #     linecolor.a = 15
+        #     pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MAX]*screen.mapscale))
+        #     linecolor.a = 0
+        #     pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MIN]*screen.mapscale))
+        #     linecolor.a = 255
 
-        linecolor = pg.Color("darkgreen")
-        times = np.linspace(self.system.time + length, self.system.time, 20)
-        mappos = screen.Map2Screen(self.MapPos(times), times)
-        pg.draw.lines(screen.map, linecolor, False, mappos)
+        # planet trail
+            linecolor = pg.Color("orange")
+            length = min(self.root.body[self.root.main.focus].torbit/4, self.torbit/4)
+            times = np.linspace(self.root.time - length, self.root.time, 20)
+            mappos = screen.Map2Screen(self.MapPos(times), times)
+            pg.draw.lines(screen.potential, linecolor, False, mappos)
+
+            linecolor = pg.Color("darkgreen")
+            times = np.linspace(self.root.time + length, self.root.time, 20)
+            mappos = screen.Map2Screen(self.MapPos(times), times)
+            pg.draw.lines(screen.potential, linecolor, False, mappos)
 
         image = pg.transform.rotozoom(self.image, -self.cylpos[PHI]/(2*np.pi)*360, screen.planetscale*self.radius)
-        screen.map.blit(image, screen.Map2Screen(self.mappos,self.system.time) - np.array(image.get_size())*0.5)
+        screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+
+#        if screen.moonscale < 0.02:
+        for moon in self.moon: moon.Draw(screen, potential=potential)
+
 
     def MapPos(self, time = 0): # time in days
         # Get positions for a list of times:
@@ -83,6 +107,6 @@ class Planet:
 
     def Move(self, dt):
         self.cylpos = self.cylpos + dt*self.cylvel
-        self.mappos = self.MapPos(self.system.time)
+        self.mappos = self.MapPos(self.root.time)
 
         for moon in self.moon: moon.Move(dt)
