@@ -12,10 +12,11 @@ class Ship:
     def __init__(self, parent, system, startpos = [1,1], mapvel = [0,0.01]):
         self.parent = parent
         self.system = system
-        self.orientation = rd.random()*2*math.pi      # parent related coordinates r, phi
-        self.pointing = np.array([math.cos(self.orientation),math.sin(self.orientation)])
+        self.orientation = rd.random()*2*np.pi      # parent related coordinates r, phi
+        self.pointing = np.array([np.cos(self.orientation),np.sin(self.orientation)])
         self.mappos = [[np.array(startpos),0] for x in range(50)]  # cartesian position in absolute space with according time
         self.mapvel = np.array(mapvel)    # map velocity in AU/day
+
 #        self.mapacc = np.array([0,0])
 
         self.image = None
@@ -32,8 +33,8 @@ class Ship:
         linecolor = pg.Color("blue")
         # linecolor.a = 255
         for step in range(1,len(self.mappos)):
-            pg.draw.circle(screen.map, linecolor, screen.Map2Screen(self.mappos[step][POS],self.mappos[step][T]),0)
-#            pg.draw.line(screen.map, linecolor, screen.Map2Screen(self.mappos[step][POS],self.mappos[step][T]),screen.Map2Screen(self.mappos[step-1][POS],self.mappos[step-1][T]))
+#            pg.draw.circle(screen.map, linecolor, screen.Map2Screen(self.mappos[step][POS],self.mappos[step][T]),0)
+            pg.draw.line(screen.map, linecolor, screen.Map2Screen(self.mappos[step][POS],self.mappos[step][T]),screen.Map2Screen(self.mappos[step-1][POS],self.mappos[step-1][T]))
         #     linecolor.a -= screen.alphastep
         #
         #
@@ -43,7 +44,7 @@ class Ship:
         #     pg.draw.line(screen.map, linecolor, screen.Map2Screen(self.mappos[step-1],step-1),screen.Map2Screen(self.mappos[step],step))
         #     linecolor.a -= screen.alphastep
 
-        image = pg.transform.rotozoom(self.image, -self.orientation/(2*math.pi)*360, screen.planetscale*10    )
+        image = pg.transform.rotozoom(self.image, -self.orientation/(2*np.pi)*360, screen.planetscale*10    )
         screen.map.blit(image, screen.Map2Screen(self.mappos[0][POS],self.system.time) - np.array(image.get_size())*0.5)
 
         # linecolor = pg.Color("green")
@@ -56,7 +57,7 @@ class Ship:
         return self.mappos[time] + self.parent.MapPos(time)
 
     def Move(self, dt):
-        self.pointing = np.array([math.cos(self.orientation),math.sin(self.orientation)])
+        self.pointing = np.array([np.cos(self.orientation),np.sin(self.orientation)])
         self.mapvel = self.mapvel + dt*self.system.CalcAcc(self.mappos[0][POS])
         self.mappos.insert(0,[self.mappos[0][POS] + dt*self.mapvel, self.system.time])
         self.mappos.pop()

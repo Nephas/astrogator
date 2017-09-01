@@ -1,9 +1,5 @@
 from globals import *
 
-R=0; PHI=1
-X=0; Y=1
-A=0; B=1
-
 class Astro:
     G = 0.000296329    # AU^3 d^-2 Mo^-1
     Msol_Me = 333000./10000 # Mogelfaktor

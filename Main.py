@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import os, sys, time
 import pygame as pg
 import numpy as np
@@ -8,37 +10,56 @@ from globals import *
 
 from System import System
 
-
 class Main:
     def __init__(self):
         self.tstart = time.time()
         pg.init()
         pg.key.set_repeat(200,50)
-        self.focus = 0
-        self.time = 0           # time in seconds
-        self.stepsize = [0.1, 10]       # stepsize in days/timestep, max
-        self.ticsize = 0.05      # length of game tic in seconds
 
-        self.screen = Screen(self)    # Main display Surface
+        pg.GAMETIC = 25
+        pg.MAPRENDER = 26
+        pg.GUIRENDER = 27
+
+        self.TPS = 25
+        self.FPS = 25
+
+        pg.time.set_timer(pg.GAMETIC, 1000/self.TPS)
+        pg.time.set_timer(pg.MAPRENDER, 1000/self.FPS)
+        pg.time.set_timer(pg.GUIRENDER, 500)
+
+        self.focus = 0
+        self.stepsize = [0.1, 10]        # stepsize in days/timestep, max
+
+        self.screen = Screen(self)      # Main display Surface
         self.world = System(self)
         self.world.Create()
+        self.world.Move(self.stepsize[0])
 
     def Loop(self):
         while True:
-            for event in pg.event.get():
+            pg.time.wait(2)
+            t=tic()
+            for i, event in enumerate(pg.event.get()):
                 if event.type == pg.QUIT:
                     sys.exit()
+                elif event.type == pg.GAMETIC:
+                    self.world.Move(self.stepsize[0])
+                elif event.type == pg.MAPRENDER:
+                    self.screen.Render()
+
+                elif event.type == pg.GUIRENDER:
+                    self.screen.RenderGui()
+
                 elif event.type == pg.KEYDOWN:
                     print(pg.key.name(event.key))
                     self.HandleKey(pg.key.name(event.key))
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     print(pg.mouse.get_pos())
-            if self.TimeStep():
-                if self.stepsize[0] > self.stepsize[MAX]:
-                    self.stepsize[0] = self.stepsize[MAX]
-                self.world.Move(self.stepsize[0])
-                print("%.1f"%self.world.time +" days - stepsize: "+str(self.stepsize[0]/self.ticsize)+" days/sec")
-            self.screen.RenderAll()
+
+#                if i >= 20:
+#                    pg.event.clear()
+#                    break
+            toc(t)
 
 
     def HandleKey(self, keyname):
@@ -46,10 +67,8 @@ class Main:
             pg.event.post(pg.event.Event(QUIT))
         elif keyname == "2":
             self.stepsize[0] *= 2
-            print(str(self.stepsize[0]/self.ticsize)+" days/sec")
         elif keyname == "1":
             self.stepsize[0] *= 0.5
-            print(str(self.stepsize[0]/self.ticsize)+" days/sec")
         elif keyname == "+":
             self.screen.mapscale *= 2.
             self.screen.starscale *= 5./4
@@ -82,13 +101,6 @@ class Main:
             self.world = System(self)
             self.world.Create()
 
-    def TimeStep(self):
-        newTime = time.time() - self.tstart
-        if newTime < self.time + self.ticsize:
-            return False
-        else:
-            self.time = newTime
-            return True
 
 
 main = Main()

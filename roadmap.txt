@@ -1,0 +1,5 @@
+
+* multiple star systems
+* wind particles
+* small bodies
+* circularization button

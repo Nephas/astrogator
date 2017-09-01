@@ -4,12 +4,6 @@ from Planet import Planet
 from Ship import Ship
 import random as rd
 
-R=0; PHI=1
-X=0; Y=1
-A=0; B=1; TOTAL=2
-MIN=0; MAX=1
-CLASS = 0; COLOR = 1
-
 class System:
     def __init__(self, parent):
         self.parent = parent
@@ -21,6 +15,7 @@ class System:
         self.planet = []            # common planets
         self.ship = []
         self.orbit = [0, 0]         # 0,0,0 in case of single, r1,r2,angle in case of double
+        self.torbit = 1e+99
         self.scorbit = [0, 0]       # stable circular orbit ranges
         self.image = pg.Surface((10,10))
         self.time = 0
@@ -40,7 +35,7 @@ class System:
 
             phistart = 0
             self.comp.append(Star(self, self, massA, [self.orbit[A], 0]))
-            self.comp.append(Star(self, self, massB, [self.orbit[B], math.pi]))
+            self.comp.append(Star(self, self, massB, [self.orbit[B], np.pi]))
             self.comp[A].Create()
             self.comp[B].Create()
         # or single star
@@ -83,9 +78,9 @@ class System:
 
         # stability zone
         linecolor.a = 15
-        pg.draw.circle(screen.map, linecolor, screen.Map2Screen(self.mappos), int(self.scorbit[MAX]*screen.mapscale))
+        pg.draw.circle(screen.map, linecolor, screen.Map2Screen(self.mappos,self.time), int(self.scorbit[MAX]*screen.mapscale))
         linecolor.a = 0
-        pg.draw.circle(screen.map, linecolor, screen.Map2Screen(self.mappos), int(self.scorbit[MIN]*screen.mapscale))
+        pg.draw.circle(screen.map, linecolor, screen.Map2Screen(self.mappos,self.time), int(self.scorbit[MIN]*screen.mapscale))
         linecolor.a = 255
 
         for planet in self.planet: planet.Draw(screen)
@@ -117,7 +112,15 @@ class System:
         return acc
 
     def MapPos(self, time = 0):
-        return self.mappos
+        if type(time) == list:
+            return [self.mappos]*len(time)
+        elif type(time) == np.ndarray:
+            pos = np.ndarray((len(time),2))
+            pos[:,:] = self.mappos[:]
+            return pos
+        else:
+            return self.mappos
+
 
     def Move(self, dt):
         self.time += dt
