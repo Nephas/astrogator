@@ -44,7 +44,7 @@ class System:
                 self.orbit[B] = rd.uniform(10,50)
             else:
                 self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R],self.mass,self.parent.mass)
-                self.orbit[B] = 0.5*self.scorbit[MAX]
+                self.orbit[B] = rd.uniform(0.2,0.8)*self.scorbit[MAX]
 
             self.orbit[A] = self.orbit[B] * massB / massA
 
@@ -103,7 +103,7 @@ class System:
 
         # stability zone
         if potential:
-            linecolor.a = 15
+            linecolor.a = 10
             pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(
                 self.mappos, self.time), int(self.scorbit[MAX] * screen.mapscale))
             linecolor.a = 0
@@ -118,7 +118,7 @@ class System:
         for ship in self.ship:
             ship.Draw(screen)
 
-        image = pg.transform.rotozoom(self.image, 0, screen.starscale*1.5)
+        image = pg.transform.rotozoom(self.image, 0, 0.05)
         screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
 
 

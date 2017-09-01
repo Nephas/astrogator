@@ -1,5 +1,6 @@
 from globals import *
 from Planet import Planet
+from Screen import Screen
 
 class Star:
     def __init__(self, parent, root, mass, cylpos = [0,0], name = "unknown"):
@@ -33,8 +34,10 @@ class Star:
         self.luminosity = Astro.MassLuminosity(self.mass)
         self.temp = Astro.StefanBoltzmann(self.luminosity,self.radius)
         self.spectral = Astro.SpectralClass(self.temp)
-        self.image = pg.Surface([100,100], flags = pg.SRCALPHA)
-        pg.draw.circle(self.image, self.spectral[COLOR], [50,50], 50)
+
+        self.image = pg.image.load("graphics/star.png")
+        self.image.convert_alpha()
+        self.image = Screen.colorSurface(self.image.copy(), self.spectral[COLOR])
 
         self.scorbit[MIN] = 0.25
         if self.scorbit[MAX] == 0:
@@ -54,12 +57,12 @@ class Star:
 
         # star hill sphere
         if potential:
-            linecolor = pg.Color("white")
-            linecolor.a = 15
+            linecolor = self.spectral[COLOR]
+            linecolor.a = 20
             pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MAX]*screen.mapscale))
             linecolor.a = 0
 #            pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MIN]*screen.mapscale))
-            linecolor.a = 255
+            linecolor.a = 150
 
         for planet in self.planet: planet.Draw(screen,potential=potential)
 
@@ -68,7 +71,7 @@ class Star:
 
         # star trail
         if potential:
-            linecolor = pg.Color("blue")
+            linecolor = self.spectral[COLOR]
             length = min(self.root.body[self.root.main.focus].torbit/3, self.torbit/3)
             times = np.linspace(self.root.time - length, self.root.time, 20)
             mappos = screen.Map2Screen(self.MapPos(times), times)

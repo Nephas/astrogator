@@ -100,3 +100,19 @@ class Screen:
     @staticmethod
     def GridDist(mapposA,mapposB):
         return (mapposA[0] - mapposB[0]) + (mapposA[1] - mapposB[1])
+
+    @staticmethod
+    def colorSurface(image, color):
+        arr = pg.surfarray.pixels3d(image).astype(float)
+
+        arr[:,:,0] *= color.r/255.
+        arr[:,:,1] *= color.g/255.
+        arr[:,:,2] *= color.b/255.
+
+        surf = image.copy()
+        pg.surfarray.blit_array(surf,arr)
+        alpha = pg.surfarray.pixels_alpha(surf)
+
+        colorsum = arr.sum(2)
+        alpha[:,:] = colorsum/colorsum.max()*255
+        return surf

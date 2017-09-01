@@ -30,20 +30,22 @@ class Planet:
         self.scorbit[MAX] = 0.1*Astro.HillSphere(self.cylpos[R],self.mass*Astro.Me_Msol,self.parent.mass)
         self.scorbit[MIN] = 0.05*self.scorbit[MAX]
 
-        # create moons
-        i = 0; n = 0
-        while True:
-            moonorbit = Astro.TitiusBode(i,self.scorbit[MIN])           # Titius Bode's law
-            print(moonorbit)
-            if moonorbit > self.scorbit[MAX]: break
-            if moonorbit > self.scorbit[MIN]:
-                self.moon.append(Moon(self, self.root, [moonorbit, rd.random()*2*np.pi]))
-                self.moon[n].Create()
-                n += 1
-            i += 1
+        # # create moons
+        # i = 0; n = 0
+        # while True:
+        #     moonorbit = Astro.TitiusBode(i,self.scorbit[MIN])           # Titius Bode's law
+        #     print(moonorbit)
+        #     if moonorbit > self.scorbit[MAX]: break
+        #     if moonorbit > self.scorbit[MIN]:
+        #         self.moon.append(Moon(self, self.root, [moonorbit, rd.random()*2*np.pi]))
+        #         self.moon[n].Create()
+        #         n += 1
+        #     i += 1
 
-        self.image = pg.Surface([100,100], flags = pg.SRCALPHA)
-        pg.draw.circle(self.image, pg.Color("red"), [50,50], 50)
+        self.image = pg.image.load("graphics/star.png",)
+        self.image.convert_alpha()
+        self.image = Screen.colorSurface(self.image.copy(), pg.Color("brown"))
+        self.image.convert_alpha()
         pg.draw.rect(self.image, TRANSPARENCY, pg.Rect(50,0,50,100))
 
 
@@ -63,7 +65,7 @@ class Planet:
         #     linecolor.a = 255
 
         # planet trail
-            linecolor = pg.Color("orange")
+            linecolor = pg.Color("brown")
             length = min(self.root.body[self.root.main.focus].torbit/4, self.torbit/4)
             times = np.linspace(self.root.time - length, self.root.time, 20)
             mappos = screen.Map2Screen(self.MapPos(times), times)
