@@ -1,5 +1,6 @@
 
-* multiple star systems
-* wind particles
+* multiple star systems x
+* wind particles        x
+* n-body simulation
 * small bodies
 * circularization button

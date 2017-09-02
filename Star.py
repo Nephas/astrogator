@@ -66,7 +66,6 @@ class Star:
             self.wind.append(Particle(self, self.root, [0.01,rd.random()*2*np.pi]))
 
     def Draw(self,screen, body=True, potential=False):
-
         # star hill sphere
         if potential:
             linecolor = self.color
@@ -88,8 +87,7 @@ class Star:
             if screen.mapscale > 10:
                 for particle in self.wind: particle.Draw(screen)
 
-        if screen.mapscale > 10:
-            for planet in self.planet: planet.Draw(screen,potential=potential)
+        for planet in self.planet: planet.Draw(screen,potential=potential)
 
         # star image
         image = pg.transform.rotozoom(self.image, 0, screen.starscale*self.radius)
@@ -101,9 +99,7 @@ class Star:
         # [t1]    [x1,y1]
         # [t2] -> [x2,y2]
         # [...]   [...]
-        if type(time) == list:
-            return [Screen.Pol2Cart(self.cylstart + t*self.cylvel) + self.parent.MapPos(t) for t in time]
-        elif type(time) == np.ndarray:
+        if type(time) == np.ndarray:
             t = np.ndarray((len(time),2))
             t[:,R] = time
             t[:,PHI] = time

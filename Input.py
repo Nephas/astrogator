@@ -16,7 +16,7 @@ class Input:
         elif keyname == "space":
             pg.event.post(pg.event.Event(pg.PAUSE))
         elif keyname == "r":
-            self.main.Init()
+            self.main.Init(rd.randint(0,2**16))
 
         elif keyname == "2":
             self.main.stepsize[0] *= 2
@@ -42,8 +42,6 @@ class Input:
 
 
     def HandleMouse(self, button, pos):
-        print(pos)
-        print()
 
         if button == 4:
             self.main.screen.Zoom(False)

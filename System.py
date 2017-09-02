@@ -17,7 +17,6 @@ class System:
         self.binary = binary
         if self.parent is None:
             self.root = self
-            self.time = 0
         else:
             self.root = self.main.world
 
@@ -39,12 +38,17 @@ class System:
         self.color = pg.Color("white")
         pg.draw.circle(self.image, self.color, [5,5], 5)
 
-    def Create(self):
-        # Default mass Distribution for root system
-        if self.parent is None:
-            self.mass = min(100,0.5 + np.random.exponential(5))
-            self.binary = rd.choice([True,False])
+    def CreateRoot(self, seed, time = 0):
+        rd.seed(seed)
+        np.random.seed(seed)
+        self.time = time
 
+        self.mass = min(100,0.5 + np.random.exponential(5))
+        self.binary = rd.choice([True,False])
+        self.Create()
+        self.Move(self.main.stepsize[0])
+
+    def Create(self):
         # Binary System
         if self.binary:
             massA = rd.uniform(0.5,0.9) * self.mass
@@ -167,9 +171,7 @@ class System:
         return acc
 
     def RootPos(self, time=0):
-        if type(time) == list:
-            return [self.mappos] * len(time)
-        elif type(time) == np.ndarray:
+        if type(time) == np.ndarray:
             pos = np.ndarray((len(time), 2))
             pos[:, :] = self.mappos[:]
             return pos
@@ -181,19 +183,16 @@ class System:
         # [t1]    [x1,y1]
         # [t2] -> [x2,y2]
         # [...]   [...]
-        if self.rank == 0:
+        if self.root is self:
             return self.RootPos(time)
 
-        if type(time) == list:
-            return [Screen.Pol2Cart(self.cylstart + t*self.cylvel) + self.parent.MapPos(t) for t in time]
-        elif type(time) == np.ndarray:
+        if type(time) == np.ndarray:
             t = np.ndarray((len(time),2))
             t[:,R] = time
             t[:,PHI] = time
 
             cs = np.ndarray((len(time),2))
             cs[:,:] = self.cylstart[:]
-
             cv = np.ndarray((len(time),2))
             cv[:,:] = self.cylvel[:]
 

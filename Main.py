@@ -10,7 +10,7 @@ class Main:
     def __init__(self):
         pass
 
-    def Init(self):
+    def Init(self, seed=1):
         pg.init()
 
         self.stepsize = [0.1, 10]        # stepsize in days/timestep, max
@@ -19,8 +19,7 @@ class Main:
         self.input = Input(self)
         self.world = System(self)
 
-        self.world.Create()
-        self.world.Move(self.stepsize[0])
+        self.world.CreateRoot(seed)
         self.world.printTerm()
 
         self.screen.RenderBack()
