@@ -1,6 +1,5 @@
 from globals import *
 
-
 class Astro:
     G = 0.000296329    # AU^3 d^-2 Mo^-1
     Msol_Me = 333000. / 10000  # Mogelfaktor
@@ -14,7 +13,7 @@ class Astro:
     Rearth = 6370000   # m
 
     def __init__(self):
-        return
+        pass
 
     @staticmethod
     def IMF(m):
@@ -52,7 +51,7 @@ class Astro:
 
     @staticmethod
     def StefanBoltzmann(L, R):  # Temperature of a star
-        return ((L * Astro.Lsol) / (4 * math.pi * Astro.sigma * (R * Astro.Rsol)**2))**0.25
+        return ((L * Astro.Lsol) / (4 * np.pi * Astro.sigma * (R * Astro.Rsol)**2))**0.25
 
     @staticmethod
     def SpectralClass(T):
@@ -78,12 +77,12 @@ class Astro:
             SC = "O"
             color = pg.Color("blue")
 
-        return [SC, color]
+        return (SC, color)
 
     @staticmethod
     def HillSphere(a, m, M):  # two body distance, body mass, parent mass
-        return a * (m / (3 * M))**(0.333)
+        return 0.9*a * (m / (3 * M))**(0.333)
 
     @staticmethod
     def PlanetRadius(M):
-        return 1. / Astro.Rearth * ((3. * M * Astro.Mearth) / (4. * math.pi * Astro.rho))**(0.333)
+        return 1. / Astro.Rearth * ((3. * M * Astro.Mearth) / (4. * np.pi * Astro.rho))**(0.333)

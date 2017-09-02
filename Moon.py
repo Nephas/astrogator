@@ -1,5 +1,7 @@
 from globals import *
 
+from Screen import Screen
+
 class Moon:
     def __init__(self, parent, root, cylpos=[0,0]):
         self.parent = parent
@@ -20,7 +22,7 @@ class Moon:
         self.cylvel = np.array([0,2*np.pi/self.torbit])
 
         self.image = pg.Surface([100,100], flags = pg.SRCALPHA)
-        pg.draw.circle(self.image, pg.Color("blue"), [50,50], 50)
+        pg.draw.circle(self.image, pg.Color("gray"), [50,50], 50)
         pg.draw.rect(self.image, TRANSPARENCY, pg.Rect(50,0,50,100))
 
 
@@ -32,7 +34,7 @@ class Moon:
         # planet trail
         if potential:
             linecolor = pg.Color("darkgray")
-            length = min(self.root.body[self.root.main.focus].torbit/6, self.torbit/6)
+            length = min(self.root.body[self.root.main.screen.focus].torbit/6, self.torbit/6)
             times = np.linspace(self.root.time - length, self.root.time, 10)
             mappos = screen.Map2Screen(self.MapPos(times), times)
             pg.draw.lines(screen.potential, linecolor, False, mappos)

@@ -1,16 +1,10 @@
 from globals import *
 
-R=0; PHI=1
-X=0; Y=1
-A=0; B=1
-
 class Screen:
-    TRAILLENGTH = 100
-    SIZE = np.array([1024,768])
+    SIZE = np.array(RESOLUTION)
 
     def __init__(self, parent):
         self.parent = parent
-        self.mapscale = 50 # px/AU
         self.display = pg.display.set_mode(Screen.SIZE)
 
         self.back = pg.Surface(Screen.SIZE)
@@ -20,11 +14,13 @@ class Screen:
         self.gui = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
         self.font = pg.font.SysFont("Arial", 12)
 
-        self.alphastep = int(255/(Screen.TRAILLENGTH))
         self.offset = 0.5*Screen.SIZE
+        self.mapscale = 5 # px/AU
         self.starscale = 0.05
         self.planetscale = 0.01
         self.moonscale = 0.01
+
+        self.focus = 0
 
     def RenderAll(self, gui=False):
         self.display.blit(self.back, (0,0))
@@ -46,26 +42,45 @@ class Screen:
         self.gui.fill(pg.Color(0,0,0,0))
         linecolor = pg.Color("white")
         linecolor.a = 50
-        pg.draw.line(self.gui, linecolor, (Screen.SIZE[X]/2,0), (Screen.SIZE[X]/2,Screen.SIZE[Y]))
-        pg.draw.line(self.gui, linecolor, (0,Screen.SIZE[Y]/2), (Screen.SIZE[X],Screen.SIZE[Y]/2))
-        for i in range(-5,7):
-            pg.draw.circle(self.gui, linecolor, (Screen.SIZE[X]/2,Screen.SIZE[Y]/2), int(np.floor(self.mapscale*2**i))+1, 1)
+        # pg.draw.line(self.gui, linecolor, (Screen.SIZE[X]/2,0), (Screen.SIZE[X]/2,Screen.SIZE[Y]))
+        # pg.draw.line(self.gui, linecolor, (0,Screen.SIZE[Y]/2), (Screen.SIZE[X],Screen.SIZE[Y]/2))
+        # for i in range(-5,7):
+        #     pg.draw.circle(self.gui, linecolor, (Screen.SIZE[X]/2,Screen.SIZE[Y]/2), int(np.floor(self.mapscale*2**i))+1, 1)
 
         info = [
-            self.font.render("Time-step: " + str(self.parent.stepsize[0]*self.parent.TPS) + " days/s", 1, pg.Color("white")),
+            self.font.render("Time-step: " + str(self.parent.stepsize[0]*TPS) + " days/s", 1, pg.Color("white")),
             self.font.render("Time: " + str(self.parent.world.time) + " days", 1, pg.Color("white")),
-            self.font.render("Moonscale: " + str(self.moonscale), 1, pg.Color("white")),
+            self.font.render("Mapscale: " + str(self.mapscale), 1, pg.Color("white")),
             self.font.render("Planetscale: " + str(self.planetscale), 1, pg.Color("white")),
-            self.font.render(self.parent.world.body[self.parent.focus].name, 1, pg.Color("white"))]
+            self.font.render(self.parent.world.body[self.focus].name, 1, pg.Color("white"))]
 
         for i,line in enumerate(info):
             self.gui.blit(line, (10, i*20 +10))
 
     def Map2Screen(self, mappos, time = 0):    # Coordinate transformation from mapspace to screenspace
-        refbody = self.parent.world.body[self.parent.focus]
+        refbody = self.parent.world.body[self.focus]
         screenpos = Screen.SIZE/2. + self.mapscale*(mappos - refbody.MapPos(time))
-
         return screenpos.astype(int)
+
+    def Screen2Map(self, screenpos, time = 0):    # Coordinate transformation from mapspace to screenspace
+        refbody = self.parent.world.body[self.focus]
+        mappos = (screenpos - Screen.SIZE/2.)/self.mapscale + refbody.MapPos(time)
+        return mappos
+
+    def Zoom(self, closer=True):
+        if closer and self.mapscale >= 1000: return
+        if not closer and self.mapscale <= 1: return
+
+        mapFactor = 2.
+        objectFactor = 5./4.
+        if not closer:
+            mapFactor = 1./mapFactor
+            objectFactor = 1./objectFactor
+
+        self.mapscale *= mapFactor
+        self.starscale *= objectFactor
+        self.planetscale *= objectFactor
+        self.moonscale *= objectFactor
 
     @staticmethod
     def Contains(pos):
@@ -116,3 +131,11 @@ class Screen:
         colorsum = arr.sum(2)
         alpha[:,:] = colorsum/colorsum.max()*255
         return surf
+
+    @staticmethod
+    def ColorBrightness(color, factor=1):
+        arr=np.array(color.normalize())
+        arr[0:3]*=factor
+        arr*=255
+        arr = map(lambda x: min(x,255),arr.astype(int))
+        return pg.Color(*arr)

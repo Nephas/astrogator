@@ -1,5 +1,7 @@
 from globals import *
 from Moon import Moon
+from Screen import Screen
+from Astro import Astro
 
 class Planet:
     def __init__(self, parent, root, cylpos=[0,0], name = "unknown"):
@@ -12,35 +14,36 @@ class Planet:
         self.cylpos = np.array(cylpos)      # running polar position
         self.cylvel = None                  # now in rad/day
         self.mappos = None                  # absolute cartesian position now in AU
+
         self.mass = 0       # in earth mass
         self.scorbit = [0,0]  # Hills-Radius in AU
         self.radius = 0     # in earth radii
         self.torbit = 0
+
         self.image = None
 
     def Create(self):
-        self.mass = rd.uniform(0.5, 100)
+#        self.mass = rd.uniform(0.5, 100)
+        self.mass = min(300,0.5 + np.random.exponential(10))
         self.radius = Astro.PlanetRadius(self.mass)
-#        self.mappos.insert(0,Screen.Pol2Cart(self.cylpos) + self.parent.mappos[0])
 
         #setup circular orbit
         self.torbit = 365*np.sqrt(self.cylpos[R]**3/self.parent.mass) # orbital period in days from parent mass
         self.cylvel = np.array([0,2*np.pi/self.torbit])
 
-        self.scorbit[MAX] = 0.1*Astro.HillSphere(self.cylpos[R],self.mass*Astro.Me_Msol,self.parent.mass)
-        self.scorbit[MIN] = 0.05*self.scorbit[MAX]
+        self.scorbit[MAX] = 0.5*Astro.HillSphere(self.cylpos[R],self.mass*Astro.Me_Msol,self.parent.mass)
+        self.scorbit[MIN] = 0.2*self.scorbit[MAX]
 
         # # create moons
-        # i = 0; n = 0
-        # while True:
-        #     moonorbit = Astro.TitiusBode(i,self.scorbit[MIN])           # Titius Bode's law
-        #     print(moonorbit)
-        #     if moonorbit > self.scorbit[MAX]: break
-        #     if moonorbit > self.scorbit[MIN]:
-        #         self.moon.append(Moon(self, self.root, [moonorbit, rd.random()*2*np.pi]))
-        #         self.moon[n].Create()
-        #         n += 1
-        #     i += 1
+        i = 0; n = 0
+        while True:
+            moonorbit = Astro.TitiusBode(i,self.scorbit[MIN])           # Titius Bode's law
+            if moonorbit > self.scorbit[MAX]: break
+            if moonorbit > self.scorbit[MIN]:
+                self.moon.append(Moon(self, self.root, [moonorbit, rd.random()*2*np.pi]))
+                self.moon[n].Create()
+                n += 1
+            i += 1
 
         self.image = pg.image.load("graphics/star.png",)
         self.image.convert_alpha()
@@ -57,30 +60,28 @@ class Planet:
 
         # # planet hill sphere
         if potential:
-        #     linecolor = pg.Color("orange")
-        #     linecolor.a = 15
-        #     pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MAX]*screen.mapscale))
-        #     linecolor.a = 0
-        #     pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MIN]*screen.mapscale))
-        #     linecolor.a = 255
+            linecolor = pg.Color("brown")
+            linecolor.a = 15
+            pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MAX]*screen.mapscale))
+            linecolor.a = 255
 
         # planet trail
-            linecolor = pg.Color("brown")
-            length = min(self.root.body[self.root.main.focus].torbit/4, self.torbit/4)
+            linecolor = Screen.ColorBrightness(pg.Color("brown"),0.8)
+            length = min(self.root.body[self.root.main.screen.focus].torbit/4, self.torbit/4)
             times = np.linspace(self.root.time - length, self.root.time, 20)
             mappos = screen.Map2Screen(self.MapPos(times), times)
             pg.draw.lines(screen.potential, linecolor, False, mappos)
 
-            linecolor = pg.Color("darkgreen")
-            times = np.linspace(self.root.time + length, self.root.time, 20)
-            mappos = screen.Map2Screen(self.MapPos(times), times)
-            pg.draw.lines(screen.potential, linecolor, False, mappos)
+            # linecolor = pg.Color("darkgreen")
+            # times = np.linspace(self.root.time + length, self.root.time, 20)
+            # mappos = screen.Map2Screen(self.MapPos(times), times)
+            # pg.draw.lines(screen.potential, linecolor, False, mappos)
 
         image = pg.transform.rotozoom(self.image, -self.cylpos[PHI]/(2*np.pi)*360, screen.planetscale*self.radius)
         screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
 
-#        if screen.moonscale < 0.02:
-        for moon in self.moon: moon.Draw(screen, potential=potential)
+        if screen.mapscale > 100:
+            for moon in self.moon: moon.Draw(screen, potential=potential)
 
 
     def MapPos(self, time = 0): # time in days
