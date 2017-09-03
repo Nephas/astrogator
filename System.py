@@ -5,6 +5,27 @@ from Ship import Ship
 from Screen import Screen
 from Astro import Astro
 
+class PackedSystem:
+    def __init__(self, pack):
+        self.main = pack.main
+        self.seed = pack.seed
+        self.name = pack.name
+        self.mass = pack.mass
+        self.mappos = pack.mappos
+        self.color = pack.color
+        self.luminosity = pack.luminosity
+
+    def getClosest(self, mappos):
+#        dists = [np.linalg.norm((mappos - body.MapPos(self.time))) for body in self.body]
+#       i = np.argmin(dists)
+        return (0,self)
+
+    def Unpack(self):
+        sys = System(self.main, mappos = self.mappos)
+        sys.UnpackSystem(self.seed, 0)
+        return sys
+
+
 class System:
     MAXSIZE = 100
     RECURSION_DEPTH = 2
@@ -24,9 +45,10 @@ class System:
         self.cylstart = np.array(cylpos)    # parent related coordinates r, phi
         self.cylpos = np.array(cylpos)      # running polar position
         self.cylvel = np.array([0,0])       # now in rad/day
-        self.mappos = np.array(mappos)       # absolute cartesian position now in AU
+        self.mappos = np.array(mappos)      # absolute cartesian position now in AU
 
         self.mass = mass             # total system mass
+        self.luminosity = 0
         self.body = []
         self.comp = []              # comp[A], comp[B]
         self.planet = []            # common planets
@@ -39,16 +61,19 @@ class System:
         self.starImage = System.STARIMAGE.convert_alpha()
         self.color = pg.Color("white")
 
-    def CreateRoot(self, seed = 0, time = 0):
+    def UnpackSystem(self, seed = 0, time = 0):
         rd.seed(seed)
         np.random.seed(seed)
         self.time = time
+        self.seed = seed
 
         self.mass = min(100,0.5 + np.random.exponential(2))
         self.name = "HIP " + str(rd.randint(10000,99999))
         self.binary = rd.choice([True,False])
         self.Create()
         self.Move()
+
+        return PackedSystem(self)
 
     def Create(self):
         # Binary System
@@ -94,8 +119,9 @@ class System:
             dist = sum(self.parent.orbit)
             self.scorbit[MAX] = Astro.HillSphere(dist, self.mass, self.parent.mass)
 
+        # Maximum System size criterion: should be stable against close flybys
         if self.parent is None:
-            self.scorbit[MAX] = System.MAXSIZE
+            self.scorbit[MAX] =  Astro.HillSphere(0.003*Astro.pc_AU,self.mass,100.)# System.MAXSIZE
 
         if self.binary:
             self.scorbit[MIN] = self.orbit[B] + self.comp[B].scorbit[MAX]
@@ -125,14 +151,16 @@ class System:
             self.root.body.append(planet)
 
         pg.draw.circle(self.cmsImage, self.color, [5,5], 5)
-        self.starImage = Screen.colorSurface(self.starImage.copy(), self.color)
+        self.luminosity = sum([c.luminosity for c in self.comp])
+        self.starImage = Screen.colorSurface(self.starImage, self.color)
 
     def Draw(self, screen, potential=False):
         linecolor = self.color
 
-        # Sector Scale: draw every system
+        # Sector Scale: draw every system, brightness by magnitude formula
         if screen.mapscale < Screen.SYSTEMTHRESHOLD:
-            image = pg.transform.rotozoom(self.starImage, 0, 0.1)
+#            image = pg.transform.rotozoom(self.starImage, 0, 0.2*np.log10(1.5+screen.starscale*self.luminosity))
+            image = pg.transform.rotozoom(self.starImage, 0, -screen.starscale*(-2.5*np.log10(self.luminosity) - 25))
             screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
             return
 

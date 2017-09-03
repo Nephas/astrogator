@@ -25,7 +25,7 @@ class Main:
         self.world = Sector(self)
         self.world.Create()
 
-        self.world.printTerm()
+#        self.world.printTerm()
 
 #        self.screen.RenderBack()
         self.screen.RenderMap()

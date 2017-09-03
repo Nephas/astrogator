@@ -4,7 +4,6 @@ class Screen:
     SIZE = np.array(RESOLUTION)
     SYSTEMTHRESHOLD = 0.1
     PLANETTHRESHOLD = 500
-#    MOONTHRESHOLD = 
 
     def __init__(self, main):
         self.main = main
@@ -12,19 +11,15 @@ class Screen:
 
         self.back = pg.Surface(Screen.SIZE)
         self.back.fill(pg.Color("black"))
-#        self.potential = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
         self.map = [pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)]*3
-#        for layer in self.map: layer.fill(pg.Color(0,0,0,0))
         self.gui = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
         self.font = pg.font.SysFont("Arial", 12)
 
         self.offset = 0.5*Screen.SIZE
-        self.mapscale = 5 # px/AU
+        self.mapscale = 0.001 # px/AU
         self.starscale = 0.05
         self.planetscale = 0.01
-        self.moonscale = 0.01
 
-        self.focus = 0
         self.refbody = None
 
     def RenderAll(self, gui=False):
@@ -44,18 +39,18 @@ class Screen:
         self.gui.fill(pg.Color(0,0,0,0))
         linecolor = pg.Color("white")
         linecolor.a = 50
-        # pg.draw.line(self.gui, linecolor, (Screen.SIZE[X]/2,0), (Screen.SIZE[X]/2,Screen.SIZE[Y]))
-        # pg.draw.line(self.gui, linecolor, (0,Screen.SIZE[Y]/2), (Screen.SIZE[X],Screen.SIZE[Y]/2))
-        # for i in range(-5,7):
-        #     pg.draw.circle(self.gui, linecolor, (Screen.SIZE[X]/2,Screen.SIZE[Y]/2), int(np.floor(self.mapscale*2**i))+1, 1)
+        pg.draw.line(self.gui, linecolor, (Screen.SIZE[X]/2,0), (Screen.SIZE[X]/2,Screen.SIZE[Y]))
+        pg.draw.line(self.gui, linecolor, (0,Screen.SIZE[Y]/2), (Screen.SIZE[X],Screen.SIZE[Y]/2))
+       # for i in range(-5,7):
+       #     pg.draw.circle(self.gui, linecolor, (Screen.SIZE[X]/2,Screen.SIZE[Y]/2), int(np.floor(self.mapscale*2**i))+1, 1)
 
         info = [
             self.font.render("Time-step: " + str(self.main.stepsize[0]*TPS) + " days/s", 1, pg.Color("white")),
             self.font.render("Time: " + str(self.main.world.time) + " days", 1, pg.Color("white")),
-            self.font.render("Mapscale: " + str(self.mapscale), 1, pg.Color("white")),
+            self.font.render("Mapscale: " + str(self.mapscale), 1, pg.Color("white"))]
 #            self.font.render("Planetscale: " + str(self.planetscale), 1, pg.Color("white")),
-            self.font.render(self.refbody.name, 1, pg.Color("white")),
-            self.font.render(str(self.refbody.mass), 1, pg.Color("white"))]
+#            self.font.render(self.refbody.name, 1, pg.Color("white")),
+#            self.font.render(str(self.refbody.mass), 1, pg.Color("white"))]
 
         for i,line in enumerate(info):
             self.gui.blit(line, (10, i*20 +10))
@@ -81,7 +76,6 @@ class Screen:
         self.mapscale *= mapFactor
         self.starscale *= objectFactor
         self.planetscale *= objectFactor
-        self.moonscale *= objectFactor
 
     @staticmethod
     def Contains(pos):
