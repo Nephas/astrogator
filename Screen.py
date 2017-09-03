@@ -2,15 +2,19 @@ from globals import *
 
 class Screen:
     SIZE = np.array(RESOLUTION)
+    SYSTEMTHRESHOLD = 0.1
+    PLANETTHRESHOLD = 500
+#    MOONTHRESHOLD = 
 
-    def __init__(self, parent):
-        self.parent = parent
+    def __init__(self, main):
+        self.main = main
         self.display = pg.display.set_mode(Screen.SIZE)
 
         self.back = pg.Surface(Screen.SIZE)
         self.back.fill(pg.Color("black"))
-        self.potential = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
-        self.map = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
+#        self.potential = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
+        self.map = [pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)]*3
+#        for layer in self.map: layer.fill(pg.Color(0,0,0,0))
         self.gui = pg.Surface(Screen.SIZE, flags = pg.SRCALPHA)
         self.font = pg.font.SysFont("Arial", 12)
 
@@ -21,22 +25,20 @@ class Screen:
         self.moonscale = 0.01
 
         self.focus = 0
+        self.refbody = None
 
     def RenderAll(self, gui=False):
         self.display.blit(self.back, (0,0))
-        self.display.blit(self.potential, (0,0))
-        self.display.blit(self.map, (0,0))
+        for layer in self.map:
+            self.display.blit(layer, (0,0))
         self.display.blit(self.gui, (0,0))
 
         pg.display.flip()
 
     def RenderMap(self):
-        self.map.fill(pg.Color(0,0,0,0))
-        self.parent.world.Draw(self, potential=False)
-
-    def RenderBack(self):
-        self.potential.fill(pg.Color(0,0,0,0))
-        self.parent.world.Draw(self, potential=True)
+        for layer in self.map:
+            layer.fill(pg.Color(0,0,0,0))
+        self.main.world.Draw(self, potential=True)
 
     def RenderGui(self):
         self.gui.fill(pg.Color(0,0,0,0))
@@ -48,28 +50,27 @@ class Screen:
         #     pg.draw.circle(self.gui, linecolor, (Screen.SIZE[X]/2,Screen.SIZE[Y]/2), int(np.floor(self.mapscale*2**i))+1, 1)
 
         info = [
-            self.font.render("Time-step: " + str(self.parent.stepsize[0]*TPS) + " days/s", 1, pg.Color("white")),
-            self.font.render("Time: " + str(self.parent.world.time) + " days", 1, pg.Color("white")),
+            self.font.render("Time-step: " + str(self.main.stepsize[0]*TPS) + " days/s", 1, pg.Color("white")),
+            self.font.render("Time: " + str(self.main.world.time) + " days", 1, pg.Color("white")),
             self.font.render("Mapscale: " + str(self.mapscale), 1, pg.Color("white")),
-            self.font.render("Planetscale: " + str(self.planetscale), 1, pg.Color("white")),
-            self.font.render(self.parent.world.body[self.focus].name, 1, pg.Color("white"))]
+#            self.font.render("Planetscale: " + str(self.planetscale), 1, pg.Color("white")),
+            self.font.render(self.refbody.name, 1, pg.Color("white")),
+            self.font.render(str(self.refbody.mass), 1, pg.Color("white"))]
 
         for i,line in enumerate(info):
             self.gui.blit(line, (10, i*20 +10))
 
     def Map2Screen(self, mappos, time = 0):    # Coordinate transformation from mapspace to screenspace
-        refbody = self.parent.world.body[self.focus]
-        screenpos = Screen.SIZE/2. + self.mapscale*(mappos - refbody.MapPos(time))
+        screenpos = Screen.SIZE/2. + self.mapscale*(mappos - self.refbody.MapPos(time))
         return screenpos.astype(int)
 
     def Screen2Map(self, screenpos, time = 0):    # Coordinate transformation from mapspace to screenspace
-        refbody = self.parent.world.body[self.focus]
-        mappos = (screenpos - Screen.SIZE/2.)/self.mapscale + refbody.MapPos(time)
+        mappos = (screenpos - Screen.SIZE/2.)/self.mapscale + self.refbody.MapPos(time)
         return mappos
 
     def Zoom(self, closer=True):
-        if closer and self.mapscale >= 1000: return
-        if not closer and self.mapscale <= 1: return
+        if closer and self.mapscale >= 1000000: return
+        if not closer and self.mapscale <= 1e-05: return
 
         mapFactor = 2.
         objectFactor = 5./4.
@@ -124,12 +125,9 @@ class Screen:
         arr[:,:,1] *= color.g/255.
         arr[:,:,2] *= color.b/255.
 
-        surf = image.copy()
-        pg.surfarray.blit_array(surf,arr)
+        surf = pg.surfarray.make_surface(arr).convert_alpha()
         alpha = pg.surfarray.pixels_alpha(surf)
-
-        colorsum = arr.sum(2)
-        alpha[:,:] = colorsum/colorsum.max()*255
+        alpha[:,:] = pg.surfarray.array_alpha(image)
         return surf
 
     @staticmethod

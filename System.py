@@ -8,8 +8,9 @@ from Astro import Astro
 class System:
     MAXSIZE = 100
     RECURSION_DEPTH = 2
+    STARIMAGE = pg.image.load("graphics/star.png")
 
-    def __init__(self, main, parent = None, mass = 0, cylpos = [0,0], name = "Epsilon Eridani", binary = True, rank = 0):
+    def __init__(self, main, parent = None, mass = 0, cylpos = [0,0], name = "", binary = True, rank = 0, mappos = [0,0]):
         self.main = main
         self.parent = parent
         self.name = name
@@ -18,12 +19,12 @@ class System:
         if self.parent is None:
             self.root = self
         else:
-            self.root = self.main.world
+            self.root = self.parent.root
 
         self.cylstart = np.array(cylpos)    # parent related coordinates r, phi
         self.cylpos = np.array(cylpos)      # running polar position
         self.cylvel = np.array([0,0])       # now in rad/day
-        self.mappos = np.array([0,0])       # absolute cartesian position now in AU
+        self.mappos = np.array(mappos)       # absolute cartesian position now in AU
 
         self.mass = mass             # total system mass
         self.body = []
@@ -34,19 +35,20 @@ class System:
         self.orbit = [0, 0]
         self.torbit = 1e+15
         self.scorbit = [0, 0]       # stable circular orbit ranges
-        self.image = pg.Surface([10,10], flags = pg.SRCALPHA)
+        self.cmsImage = pg.Surface([10,10], flags = pg.SRCALPHA)
+        self.starImage = System.STARIMAGE.convert_alpha()
         self.color = pg.Color("white")
-        pg.draw.circle(self.image, self.color, [5,5], 5)
 
-    def CreateRoot(self, seed, time = 0):
+    def CreateRoot(self, seed = 0, time = 0):
         rd.seed(seed)
         np.random.seed(seed)
         self.time = time
 
-        self.mass = min(100,0.5 + np.random.exponential(5))
+        self.mass = min(100,0.5 + np.random.exponential(2))
+        self.name = "HIP " + str(rd.randint(10000,99999))
         self.binary = rd.choice([True,False])
         self.Create()
-        self.Move(self.main.stepsize[0])
+        self.Move()
 
     def Create(self):
         # Binary System
@@ -122,28 +124,41 @@ class System:
         for planet in self.planet:
             self.root.body.append(planet)
 
+        pg.draw.circle(self.cmsImage, self.color, [5,5], 5)
+        self.starImage = Screen.colorSurface(self.starImage.copy(), self.color)
+
     def Draw(self, screen, potential=False):
         linecolor = self.color
 
-        # stability zone
-        if potential and self.binary:
-            linecolor.a = 8
-            pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(
-                self.mappos, self.root.time), int(self.scorbit[MAX] * screen.mapscale))
-            linecolor.a = 0
-            pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(
-                self.mappos, self.root.time), int(self.scorbit[MIN] * screen.mapscale))
-            linecolor.a = 255
+        # Sector Scale: draw every system
+        if screen.mapscale < Screen.SYSTEMTHRESHOLD:
+            image = pg.transform.rotozoom(self.starImage, 0, 0.1)
+            screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+            return
 
-        for comp in self.comp:
-            comp.Draw(screen, potential=potential)
-        for planet in self.planet:
-            planet.Draw(screen, potential=potential)
-        for ship in self.ship:
-            ship.Draw(screen)
+        else:
+        # System Scale: check if this is the camera system
+            if not self.main.screen.refbody.root is self.root: return
 
-        image = pg.transform.rotozoom(self.image, 0, 0.3)
-        screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+            # stability zone and CoM
+            if self.binary and screen.mapscale < Screen.PLANETTHRESHOLD:
+                linecolor.a = 8
+                pg.draw.circle(screen.map[GRAV], linecolor, screen.Map2Screen(
+                    self.mappos, self.root.time), int(self.scorbit[MAX] * screen.mapscale))
+                linecolor.a = 0
+                pg.draw.circle(screen.map[GRAV], linecolor, screen.Map2Screen(
+                    self.mappos, self.root.time), int(self.scorbit[MIN] * screen.mapscale))
+                linecolor.a = 255
+
+                image = pg.transform.rotozoom(self.cmsImage, 0, 0.3)
+                screen.map[TRAIL].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+
+            for comp in self.comp:
+                comp.Draw(screen, potential=potential)
+            for planet in self.planet:
+                planet.Draw(screen, potential=potential)
+            for ship in self.ship:
+                ship.Draw(screen)
 
 
     def CalcAcc(self, mappos):
@@ -205,10 +220,12 @@ class System:
         i = np.argmin(dists)
         return (i,self.body[i])
 
-    def Move(self, dt):
-        if self.root is self: self.time += dt
-        self.cylpos = self.cylpos + dt*self.cylvel
-        self.mappos = self.MapPos(self.root.time)
+    def Move(self, dt=0):
+        if self.root is self:
+            self.time += dt
+        else:
+            self.cylpos = self.cylpos + dt*self.cylvel
+            self.mappos = self.MapPos(self.root.time)
 
         for comp in self.comp:
             comp.Move(dt)

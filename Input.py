@@ -27,9 +27,10 @@ class Input:
         elif keyname == "-":
             self.main.screen.Zoom(False)
         elif keyname == "tab":
-            self.main.screen.focus = (self.main.screen.focus + 1) % len(self.main.world.body)
+            self.main.screen.refbody = rd.choice(self.main.world.body)
         elif keyname == "left shift":
-            self.main.screen.focus = (self.main.screen.focus - 1) % len(self.main.world.body)
+            self.main.screen.refbody = rd.choice(self.main.world.body)
+
 
         # elif keyname == "right":
         #     self.main.world.ship[0].orientation += 0.2
@@ -51,3 +52,4 @@ class Input:
             mappos = self.main.screen.Screen2Map(np.array(pos),self.main.world.time)
             (i,body) = self.main.world.getClosest(mappos)
             self.main.screen.focus = i
+            self.main.screen.refbody = body

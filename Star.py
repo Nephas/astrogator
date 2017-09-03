@@ -5,6 +5,8 @@ from Astro import Astro
 from Particle import Particle
 
 class Star:
+    STARIMAGE = pg.image.load("graphics/star.png")
+
     def __init__(self, parent, root, mass, cylpos = [0,0], name = "unknown"):
         self.parent = parent
         self.root = root
@@ -26,8 +28,7 @@ class Star:
         self.temp = 0           # Kelvin
         self.spectral = []
         self.color = pg.Color("white")
-
-        self.image = None
+        self.image = Star.STARIMAGE.convert_alpha()
 
     def Create(self):
 
@@ -40,9 +41,6 @@ class Star:
         self.luminosity = Astro.MassLuminosity(self.mass)
         self.temp = Astro.StefanBoltzmann(self.luminosity,self.radius)
         (self.spectral, self.color) = Astro.SpectralClass(self.temp)
-
-        self.image = pg.image.load("graphics/star.png")
-        self.image.convert_alpha()
         self.image = Screen.colorSurface(self.image.copy(), self.color)
 
         self.scorbit[MIN] = 0.1
@@ -61,37 +59,35 @@ class Star:
                 n += 1
             i += 1
 
-    def EmitParticle(self,n=1):
+        self.EmitParticle(10)
+
+    def EmitParticle(self,n=10):
         for i in range(n):
-            self.wind.append(Particle(self, self.root, [0.01,rd.random()*2*np.pi]))
+            self.wind.append(Particle(self, self.root, [rd.random()*self.scorbit[MAX],0]))
 
     def Draw(self,screen, body=True, potential=False):
         # star hill sphere
-        if potential:
+        if screen.mapscale < Screen.PLANETTHRESHOLD:
             linecolor = self.color
             linecolor.a = 15
-            pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MAX]*screen.mapscale))
+            pg.draw.circle(screen.map[GRAV], linecolor, screen.Map2Screen(self.mappos,self.root.time), (int(self.scorbit[MAX]*screen.mapscale)))
             linecolor.a = 150
 
-        if not Screen.Contains(screen.Map2Screen(self.mappos,self.root.time)):
-            return
-
-        # star trail
-        if potential:
+            # star trail
             linecolor = self.color
-            length = min(self.root.body[self.root.main.screen.focus].torbit/3, self.torbit/3)
+            length = min(self.root.main.screen.refbody.torbit/3, self.torbit/3)
             times = np.linspace(self.root.time - length, self.root.time, 20)
             mappos = screen.Map2Screen(self.MapPos(times), times)
-            pg.draw.lines(screen.potential, linecolor, False, mappos)
+            pg.draw.lines(screen.map[TRAIL], linecolor, False, mappos)
 
-            if screen.mapscale > 10:
-                for particle in self.wind: particle.Draw(screen)
-
-        for planet in self.planet: planet.Draw(screen,potential=potential)
+            for particle in self.wind: particle.Draw(screen)
 
         # star image
-        image = pg.transform.rotozoom(self.image, 0, screen.starscale*self.radius)
-        screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+        if Screen.Contains(screen.Map2Screen(self.mappos,self.root.time)):
+            image = pg.transform.rotozoom(self.image, 0, screen.starscale*self.radius)
+            screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+
+        for planet in self.planet: planet.Draw(screen,potential=potential)
 
 
     def MapPos(self, time = 0): # time in days
@@ -118,7 +114,7 @@ class Star:
         self.cylpos = self.cylpos + dt*self.cylvel
         self.mappos = self.MapPos(self.root.time)
 
-        if len(self.wind) < 20 and np.random.randint(20) == 1:
+        if len(self.wind) < 10:
             self.EmitParticle(1)
 
         for planet in self.planet: planet.Move(dt)

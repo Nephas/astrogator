@@ -4,7 +4,7 @@ import numpy as np
 import random as rd
 
 pg.GAMETIC = 25
-pg.BACKRENDER = 26
+pg.RENDER = 26
 pg.GUIRENDER = 27
 pg.DEBUG = 28
 pg.PAUSE = 29
@@ -19,6 +19,10 @@ X=0; Y=1
 A=0; B=1; TOTAL=2
 MIN=0; MAX=1
 CLASS = 0; COLOR = 1
+
+GRAV = 0
+TRAIL = 1
+BODY = 2
 
 SYSTEMSIZE = 100
 

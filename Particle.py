@@ -20,7 +20,7 @@ class Particle:
     def Draw(self,screen):
         r = int(self.cylpos[R]*self.root.main.screen.mapscale+1)
         color = Screen.ColorBrightness(self.parent.color,0.1 + 0.5*(1 - self.cylpos[R]/self.parent.scorbit[MAX]))
-        pg.draw.circle(screen.potential, color, screen.Map2Screen(self.parent.mappos,self.root.time).astype(int), int(r), 1)
+        pg.draw.circle(screen.map[TRAIL], color, screen.Map2Screen(self.parent.mappos,self.root.time).astype(int), int(r), 1)
 #        points:
 #        screen.potential.blit(self.image, screen.Map2Screen(self.MapPos(self.root.time),self.root.time) - np.array(self.image.get_size())*0.5)
 

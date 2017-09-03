@@ -2,8 +2,10 @@ from globals import *
 
 class Astro:
     G = 0.000296329    # AU^3 d^-2 Mo^-1
-    Msol_Me = 333000. / 10000  # Mogelfaktor
+    Msol_Me = 333000. / 100 # Mogelfaktor
     Me_Msol = 1 / Msol_Me
+    pc_AU = 206264.8    # pc in AU
+    AU_pc = 1 / pc_AU
     sigma = 5.67e-08   # W m^-2 K^-4
     Rsol = 695000000   # m
     Lsol = 3.846e26    # Watt

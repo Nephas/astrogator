@@ -3,6 +3,7 @@ from globals import *
 from Screen import Screen
 
 class Moon:
+    MOONIMAGE = pg.image.load("graphics/moon.png")
     def __init__(self, parent, root, cylpos=[0,0]):
         self.parent = parent
         self.root = root
@@ -21,27 +22,22 @@ class Moon:
         self.torbit = 365*np.sqrt(self.cylpos[R]**3/self.parent.mass) # orbital period in days from parent mass
         self.cylvel = np.array([0,2*np.pi/self.torbit])
 
-        self.image = pg.Surface([100,100], flags = pg.SRCALPHA)
-        pg.draw.circle(self.image, pg.Color("gray"), [50,50], 50)
-        pg.draw.rect(self.image, TRANSPARENCY, pg.Rect(50,0,50,100))
-
+        self.image = Moon.MOONIMAGE.convert_alpha()
+        self.image = Screen.colorSurface(self.image.copy(), pg.Color("darkgray"))
 
     def Draw(self,screen,potential=False):
         if not Screen.Contains(screen.Map2Screen(self.mappos,self.root.time)):
             return
 
-        potential=True
-        # planet trail
-        if potential:
-            linecolor = pg.Color("darkgray")
-            length = min(self.root.body[self.root.main.screen.focus].torbit/6, self.torbit/6)
-            times = np.linspace(self.root.time - length, self.root.time, 10)
-            mappos = screen.Map2Screen(self.MapPos(times), times)
-            pg.draw.lines(screen.potential, linecolor, False, mappos)
+        linecolor = pg.Color("darkgray")
+        length = min(self.root.main.screen.refbody.torbit/6, self.torbit/6)
+        times = np.linspace(self.root.time - length, self.root.time, 10)
+        mappos = screen.Map2Screen(self.MapPos(times), times)
+        pg.draw.lines(screen.map[TRAIL], linecolor, False, mappos)
 
         if screen.moonscale > 0.02:
             image = pg.transform.rotozoom(self.image, -self.parent.cylpos[PHI]/(2*np.pi)*360, screen.moonscale*self.radius)
-            screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+            screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
 
     def MapPos(self, time = 0): # time in days
         # Get positions for a list of times:

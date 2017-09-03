@@ -4,6 +4,8 @@ from Screen import Screen
 from Astro import Astro
 
 class Planet:
+    PLANETIMAGE = pg.image.load("graphics/planet.png")
+
     def __init__(self, parent, root, cylpos=[0,0], name = "unknown"):
         self.parent = parent
         self.root = root
@@ -31,7 +33,7 @@ class Planet:
         self.torbit = 365*np.sqrt(self.cylpos[R]**3/self.parent.mass) # orbital period in days from parent mass
         self.cylvel = np.array([0,2*np.pi/self.torbit])
 
-        self.scorbit[MAX] = 0.5*Astro.HillSphere(self.cylpos[R],self.mass*Astro.Me_Msol,self.parent.mass)
+        self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R],self.mass*Astro.Me_Msol,self.parent.mass)
         self.scorbit[MIN] = 0.2*self.scorbit[MAX]
 
         # # create moons
@@ -45,32 +47,26 @@ class Planet:
                 n += 1
             i += 1
 
-        self.image = pg.image.load("graphics/star.png",)
-        self.image.convert_alpha()
+        self.image = Planet.PLANETIMAGE.convert_alpha()
         self.image = Screen.colorSurface(self.image.copy(), pg.Color("brown"))
-        self.image.convert_alpha()
-        pg.draw.rect(self.image, TRANSPARENCY, pg.Rect(50,0,50,100))
 
 
     def Draw(self, screen, body=True, potential=False):
-        # if screen.moonscale > 2:
-
         if not Screen.Contains(screen.Map2Screen(self.mappos,self.root.time)):
             return
 
         # # planet hill sphere
-        if potential:
-            linecolor = pg.Color("brown")
-            linecolor.a = 15
-            pg.draw.circle(screen.potential, linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MAX]*screen.mapscale))
-            linecolor.a = 255
+        linecolor = pg.Color("brown")
+        linecolor.a = 15
+        pg.draw.circle(screen.map[GRAV], linecolor, screen.Map2Screen(self.mappos,self.root.time), int(self.scorbit[MAX]*screen.mapscale))
+        linecolor.a = 255
 
         # planet trail
-            linecolor = Screen.ColorBrightness(pg.Color("brown"),0.8)
-            length = min(self.root.body[self.root.main.screen.focus].torbit/4, self.torbit/4)
-            times = np.linspace(self.root.time - length, self.root.time, 20)
-            mappos = screen.Map2Screen(self.MapPos(times), times)
-            pg.draw.lines(screen.potential, linecolor, False, mappos)
+        linecolor = Screen.ColorBrightness(pg.Color("brown"),0.8)
+        length = min(self.root.main.screen.refbody.torbit/4, self.torbit/4)
+        times = np.linspace(self.root.time - length, self.root.time, 20)
+        mappos = screen.Map2Screen(self.MapPos(times), times)
+        pg.draw.lines(screen.map[TRAIL], linecolor, False, mappos)
 
             # linecolor = pg.Color("darkgreen")
             # times = np.linspace(self.root.time + length, self.root.time, 20)
@@ -78,9 +74,9 @@ class Planet:
             # pg.draw.lines(screen.potential, linecolor, False, mappos)
 
         image = pg.transform.rotozoom(self.image, -self.cylpos[PHI]/(2*np.pi)*360, screen.planetscale*self.radius)
-        screen.map.blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+        screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
 
-        if screen.mapscale > 100:
+        if screen.mapscale > 10:
             for moon in self.moon: moon.Draw(screen, potential=potential)
 
 
