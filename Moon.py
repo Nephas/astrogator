@@ -1,6 +1,7 @@
 from globals import *
 
 from Screen import Screen
+from Astro import Astro
 
 class Moon:
     MOONIMAGE = pg.image.load("graphics/moon.png")
@@ -19,7 +20,7 @@ class Moon:
         self.mass = rd.random()/10
 
         #setup circular orbit
-        self.torbit = 365*np.sqrt(self.cylpos[R]**3/self.parent.mass) # orbital period in days from parent mass
+        self.torbit = 365*np.sqrt(self.cylpos[R]**3/(Astro.Me_Msol*self.parent.mass)) # orbital period in days from parent mass
         self.cylvel = np.array([0,2*np.pi/self.torbit])
 
         self.image = Moon.MOONIMAGE.convert_alpha()
@@ -35,9 +36,8 @@ class Moon:
         mappos = screen.Map2Screen(self.MapPos(times), times)
         pg.draw.lines(screen.map[TRAIL], linecolor, False, mappos)
 
-        if screen.moonscale > 0.02:
-            image = pg.transform.rotozoom(self.image, -self.parent.cylpos[PHI]/(2*np.pi)*360, screen.moonscale*self.radius)
-            screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
+        image = pg.transform.rotozoom(self.image, -self.parent.cylpos[PHI]/(2*np.pi)*360, screen.planetscale*self.radius)
+        screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
 
     def MapPos(self, time = 0): # time in days
         # Get positions for a list of times:
