@@ -50,6 +50,4 @@ class Input:
             self.main.screen.Zoom()
         elif button == 1:
             mappos = self.main.screen.Screen2Map(np.array(pos),self.main.world.time)
-            (i,body) = self.main.world.getClosest(mappos)
-            self.main.screen.focus = i
-            self.main.screen.refbody = body
+            self.main.screen.refbody = self.main.world.getClosest(mappos)

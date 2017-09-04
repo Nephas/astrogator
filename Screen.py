@@ -16,16 +16,19 @@ class Screen:
         self.font = pg.font.SysFont("Arial", 12)
 
         self.offset = 0.5*Screen.SIZE
-        self.mapscale = 0.001 # px/AU
-        self.starscale = 0.05
+        self.mapscale = 50 # px/AU
+        self.starscale = 0.1
         self.planetscale = 0.01
 
         self.refbody = None
 
     def RenderAll(self, gui=False):
         self.display.blit(self.back, (0,0))
-        for layer in self.map:
-            self.display.blit(layer, (0,0))
+  #      for layer in self.map:
+        self.display.blit(self.map[GRAV], (0,0))
+        self.display.blit(self.map[TRAIL], (0,0))
+        self.display.blit(self.map[BODY], (0,0))
+
         self.display.blit(self.gui, (0,0))
 
         pg.display.flip()
@@ -33,7 +36,7 @@ class Screen:
     def RenderMap(self):
         for layer in self.map:
             layer.fill(pg.Color(0,0,0,0))
-        self.main.world.Draw(self, potential=True)
+        self.main.world.Draw(self)
 
     def RenderGui(self):
         self.gui.fill(pg.Color(0,0,0,0))
@@ -47,10 +50,10 @@ class Screen:
         info = [
             self.font.render("Time-step: " + str(self.main.stepsize[0]*TPS) + " days/s", 1, pg.Color("white")),
             self.font.render("Time: " + str(self.main.world.time) + " days", 1, pg.Color("white")),
-            self.font.render("Mapscale: " + str(self.mapscale), 1, pg.Color("white"))]
-#            self.font.render("Planetscale: " + str(self.planetscale), 1, pg.Color("white")),
-#            self.font.render(self.refbody.name, 1, pg.Color("white")),
-#            self.font.render(str(self.refbody.mass), 1, pg.Color("white"))]
+            self.font.render("Mapscale: " + str(self.mapscale), 1, pg.Color("white")),
+            self.font.render("Planetscale: " + str(self.planetscale), 1, pg.Color("white")),
+            self.font.render(self.refbody.name, 1, pg.Color("white")),
+            self.font.render(str(self.refbody.mass), 1, pg.Color("white"))]
 
         for i,line in enumerate(info):
             self.gui.blit(line, (10, i*20 +10))
@@ -113,7 +116,7 @@ class Screen:
 
     @staticmethod
     def colorSurface(image, color):
-        arr = pg.surfarray.pixels3d(image).astype(float)
+        arr = pg.surfarray.pixels3d(image.copy()).astype(float)
 
         arr[:,:,0] *= color.r/255.
         arr[:,:,1] *= color.g/255.

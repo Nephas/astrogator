@@ -26,11 +26,11 @@ class Star:
         self.luminosity = 0     # solar lum
         self.radius = 0         # solar radii
         self.temp = 0           # Kelvin
-        self.spectral = []
-        self.color = pg.Color("white")
-        self.image = Star.STARIMAGE.convert_alpha()
+#        self.spectral = []
+#        self.color = pg.Color("white")
 
-    def Create(self):
+
+    def Create(self, full = True):
 
         if self.cylpos[R] != 0:
             distance = self.parent.orbit[A] + self.parent.orbit[B]
@@ -41,6 +41,10 @@ class Star:
         self.luminosity = Astro.MassLuminosity(self.mass)
         self.temp = Astro.StefanBoltzmann(self.luminosity,self.radius)
         (self.spectral, self.color) = Astro.SpectralClass(self.temp)
+
+        if not full: return
+        # load graphics
+        self.image = Star.STARIMAGE.convert_alpha()
         self.image = Screen.colorSurface(self.image.copy(), self.color)
 
         self.scorbit[MIN] = 0.1
@@ -65,7 +69,7 @@ class Star:
         for i in range(n):
             self.wind.append(Particle(self, self.root, [rd.random()*self.scorbit[MAX],0]))
 
-    def Draw(self,screen, body=True, potential=False):
+    def Draw(self,screen):
         # star hill sphere
         if screen.mapscale < Screen.PLANETTHRESHOLD:
             linecolor = self.color
@@ -87,7 +91,7 @@ class Star:
             image = pg.transform.rotozoom(self.image, 0, screen.starscale*self.radius)
             screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
 
-        for planet in self.planet: planet.Draw(screen,potential=potential)
+        for planet in self.planet: planet.Draw(screen)
 
 
     def MapPos(self, time = 0): # time in days

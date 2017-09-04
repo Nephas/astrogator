@@ -23,7 +23,7 @@ class Main:
 #        self.world.CreateRoot(seed)
 
         self.world = Sector(self)
-        self.world.Create()
+        self.world.Generate()
 
 #        self.world.printTerm()
 

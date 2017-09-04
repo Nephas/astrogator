@@ -26,7 +26,7 @@ class Planet:
 
     def Create(self):
 #        self.mass = rd.uniform(0.5, 100)
-        self.mass = min(300,0.5 + np.random.exponential(10))
+        self.mass = min(300,0.5 + np.random.exponential(self.cylpos[R]))
         self.radius = Astro.PlanetRadius(self.mass)
 
         #setup circular orbit
@@ -34,12 +34,12 @@ class Planet:
         self.cylvel = np.array([0,2*np.pi/self.torbit])
 
         self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R],self.mass*Astro.Me_Msol,self.parent.mass)
-        self.scorbit[MIN] = 0.2*self.scorbit[MAX]
+        self.scorbit[MIN] = 0#.1*self.scorbit[MAX]
 
         # # create moons
         i = 0; n = 0
         while True:
-            moonorbit = Astro.TitiusBode(i,self.scorbit[MIN])           # Titius Bode's law
+            moonorbit = Astro.TitiusBode(i,0.01)           # Titius Bode's law
             if moonorbit > self.scorbit[MAX]: break
             if moonorbit > self.scorbit[MIN]:
                 self.moon.append(Moon(self, self.root, [moonorbit, rd.random()*2*np.pi]))
@@ -51,7 +51,7 @@ class Planet:
         self.image = Screen.colorSurface(self.image.copy(), pg.Color("brown"))
 
 
-    def Draw(self, screen, body=True, potential=False):
+    def Draw(self, screen):
         if not Screen.Contains(screen.Map2Screen(self.mappos,self.root.time)):
             return
 
@@ -73,11 +73,11 @@ class Planet:
             # mappos = screen.Map2Screen(self.MapPos(times), times)
             # pg.draw.lines(screen.potential, linecolor, False, mappos)
 
+        if screen.mapscale > Screen.PLANETTHRESHOLD:
+            for moon in self.moon: moon.Draw(screen)
+
         image = pg.transform.rotozoom(self.image, -self.cylpos[PHI]/(2*np.pi)*360, screen.planetscale*self.radius)
         screen.map[BODY].blit(image, screen.Map2Screen(self.mappos,self.root.time) - np.array(image.get_size())*0.5)
-
-        if screen.mapscale > 10:
-            for moon in self.moon: moon.Draw(screen, potential=potential)
 
 
     def MapPos(self, time = 0): # time in days
