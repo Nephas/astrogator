@@ -7,7 +7,7 @@ import pygame as pg
 
 from Astro import Astro
 from Screen import Screen
-from System import System
+from System import RootSystem
 
 R = 0
 PHI = 1
@@ -24,7 +24,7 @@ class Sector:
 
     STARIMAGE = pg.image.load("graphics/star.png")
 
-    def __init__(self, main, size=[20, 20], density=0.5):
+    def __init__(self, main, size=[25, 25], density=0.5):
         self.main = main
         self.time = 0
         self.system = []
@@ -42,7 +42,7 @@ class Sector:
             pos = Astro.pc_AU * 0.5 * \
                 np.array([np.random.normal() * self.size[X],
                           np.random.normal() * self.size[Y]])
-            system = System(self.main, mappos=pos)
+            system = RootSystem(self.main, mappos=pos)
             pack = system.Generate(rd.randint(0, 2**16), 0)
             self.system.append(pack)
 
