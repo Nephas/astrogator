@@ -1,47 +1,55 @@
 #! /usr/bin/env python
+"""Author: Marco Fink"""
 
-from globals import *
+import sys
 
-from System import System
-from Sector import Sector
-from Screen import Screen
+import pygame as pg
+
 from Input import Input
+from Screen import Screen
+from Sector import Sector
+
 
 class Main:
+    """Main game class"""
+
+    TPS = 30
+    FPS = 15
+
     def __init__(self):
-        pass
+        """Main game class"""
+        pg.GAMETIC = 25
+        pg.RENDER = 26
+        pg.GUIRENDER = 27
+        pg.DEBUG = 28
+        pg.PAUSE = 29
 
-    def Init(self, seed=1):
         pg.init()
-
-        self.stepsize = [0.1, 10]        # stepsize in days/timestep, max
-
+        self.stepsize = 0.1             # stepsize in days/timestep, max
         self.screen = Screen(self)      # Main display Surface
         self.input = Input(self)
 
-#        self.world = System(self)
-#        self.world.CreateRoot(seed)
-
+    def Generate(self, seed=1):
+        """Generate the game world"""
         self.world = Sector(self)
         self.world.Generate()
 
-#        self.world.printTerm()
-
-#        self.screen.RenderBack()
         self.screen.RenderMap()
         self.screen.RenderAll()
 
     def Run(self):
+        """Start the main game loop"""
         pg.event.clear()
         self.debug = False
         self.running = True
 
-        pg.time.set_timer(pg.GAMETIC, 1000/TPS)
-        pg.time.set_timer(pg.RENDER, 1000/FPS)
+        pg.time.set_timer(pg.GAMETIC, 1000 / Main.TPS)
+        pg.time.set_timer(pg.RENDER, 1000 / Main.FPS)
         pg.time.set_timer(pg.GUIRENDER, 500)
 
         while True:
-            if self.debug: break
+            if self.debug:
+                break
             pg.time.wait(2)
             for event in pg.event.get():
                 if event.type == pg.QUIT:
@@ -53,16 +61,13 @@ class Main:
                     self.debug = True
                 elif event.type == pg.PAUSE:
                     self.running = not self.running
-                    pg.time.set_timer(pg.GAMETIC, 1000/TPS * int(self.running))
+                    pg.time.set_timer(pg.GAMETIC, 1000 / Main.TPS * int(self.running))
 
                 elif event.type == pg.GAMETIC:
-                    self.world.Move(self.stepsize[0])
+                    self.world.Move(self.stepsize)
                 elif event.type == pg.RENDER:
                     self.screen.RenderMap()
                     self.screen.RenderAll()
-
-#                    self.screen.RenderBack()
-#                    self.screen.RenderAll()
                 elif event.type == pg.GUIRENDER:
                     self.screen.RenderGui()
 
@@ -73,5 +78,5 @@ class Main:
 
 
 main = Main()
-main.Init()
+main.Generate()
 main.Run()
