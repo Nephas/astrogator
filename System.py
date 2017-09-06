@@ -6,9 +6,8 @@ import numpy as np
 import pygame as pg
 
 from Astro import Astro
-from Planet import Planet
+from Body import Planet, Star
 from Screen import Screen
-from Star import Star
 
 R = 0
 PHI = 1
@@ -119,16 +118,18 @@ class System:
                 self.torbit = 365 * np.sqrt(distance**3 / self.parent.mass)  # orbital period in years from parent mass
                 self.cylvel = np.array([0, 2 * np.pi / (self.torbit)])
 
+            phirand = rd.random() * 2 * np.pi
+
             if rd.random() < 0.5 or self.rank >= System.RECURSION_DEPTH - 1:
-                self.comp.append(Star(self, self.root, massA, [self.orbit[A], 0], self.name + " A"))
+                self.comp.append(Star(self, self.root, massA, [self.orbit[A], phirand], self.name + " A"))
             else:
                 self.comp.append(System(self.main, self, massA, [self.orbit[
-                                 A], 0], self.name + " A", True, self.rank + 1))
+                                 A], phirand], self.name + " A", True, self.rank + 1))
             if rd.random() < 0.5 or self.rank >= System.RECURSION_DEPTH - 1:
-                self.comp.append(Star(self, self.root, massB, [self.orbit[B], np.pi], self.name + " B"))
+                self.comp.append(Star(self, self.root, massB, [self.orbit[B], phirand + np.pi], self.name + " B"))
             else:
                 self.comp.append(System(self.main, self, massB, [self.orbit[
-                                 B], np.pi], self.name + " B", True, self.rank + 1))
+                                 B], phirand + np.pi], self.name + " B", True, self.rank + 1))
 
         # or single star
         elif not self.binary:
@@ -287,3 +288,6 @@ class System:
         indent += "   "
         for comp in self.comp:
             comp.printTerm(indent)
+
+
+#class SubSystem(System):

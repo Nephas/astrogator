@@ -34,7 +34,7 @@ class Input:
         elif keyname == "-":
             self.main.screen.Zoom(False)
         elif keyname == "tab":
-            self.main.screen.refbody = rd.choice(self.main.world.body)
+            self.main.world.changeFocus(rd.choice(self.main.world.system))
         elif keyname == "left shift":
             self.main.screen.refbody = rd.choice(self.main.world.body)
 
