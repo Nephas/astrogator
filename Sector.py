@@ -56,11 +56,7 @@ class Sector:
     def Draw(self, screen):
         if screen.mapscale < Screen.SYSTEMTHRESHOLD:
             for system in self.system:
-                if Screen.Contains(screen.Map2Screen(system.mappos, self.time)):
-                    image = pg.transform.rotozoom(
-                        system.image, 0, - 5 * screen.starscale * (system.mag))
-                    screen.map[Screen.BODY].blit(image, screen.Map2Screen(
-                        system.mappos, self.time) - np.array(image.get_size()) * 0.5)
+                system.Draw(screen)
         else:
             self.activesystem.Draw(screen)
 

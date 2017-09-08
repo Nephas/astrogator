@@ -47,6 +47,13 @@ class PackedSystem:
 
         # string to seed: int(''.join([str(ord(l)) for l in s]))%(2**32-1)
 
+    def Draw(self, screen):
+        if Screen.Contains(screen.Map2Screen(self.mappos, self.main.world.time)):
+            image = pg.transform.rotozoom(
+                self.image, 0, - 5 * screen.starscale * self.mag)
+            screen.map[Screen.BODY].blit(image, screen.Map2Screen(
+                self.mappos, self.main.world.time) - np.array(image.get_size()) * 0.5)
+
 
 class System:
     """A generic binary or singular system"""

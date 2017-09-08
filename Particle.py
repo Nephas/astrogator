@@ -14,7 +14,7 @@ MIN = 0
 MAX = 1
 
 
-class Particle:
+class Wave:
     """Individual wave in a stellar wind"""
 
     def __init__(self, parent, root, cylpos=[0, 0]):

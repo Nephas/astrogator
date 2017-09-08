@@ -18,7 +18,7 @@ class Screen:
 
     SIZE = np.array([1024, 768])
     SYSTEMTHRESHOLD = 0.1
-    PLANETTHRESHOLD = 250
+    PLANETTHRESHOLD = 50
 
     GRAV = 2
     TRAIL = 1
@@ -84,7 +84,7 @@ class Screen:
         return mappos
 
     def Zoom(self, closer=True):
-        if closer and self.mapscale >= 1000000:
+        if closer and self.mapscale >= 1e+06:
             return
         if not closer and self.mapscale <= 1e-05:
             return

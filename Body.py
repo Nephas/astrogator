@@ -6,7 +6,8 @@ import numpy as np
 import pygame as pg
 
 from Astro import Astro
-from Particle import Particle
+from Particle import Wave
+from Structure import Ring
 from Screen import Screen
 
 R = 0
@@ -84,7 +85,7 @@ class Star(Body):
     def __init__(self, parent, root, mass, cylpos=np.array([0, 0]), name="unknown"):
         Body.__init__(self, parent, root, cylpos, name)
 
-        self.child = []
+        self.structure = None
         self.particle = []
 
         self.mass = mass
@@ -142,7 +143,7 @@ class Star(Body):
 
     def EmitParticle(self, n=10):
         for i in range(n):
-            self.particle.append(Particle(self, self.root, [rd.random() * self.scorbit[MAX], 0]))
+            self.particle.append(Wave(self, self.root, [rd.random() * self.scorbit[MAX], 0]))
 
     def Collapse(self, full=True):
         hole = BlackHole(self.parent, self.root, self.mass, self.cylpos, self.name)
@@ -153,13 +154,13 @@ class Star(Body):
 
     def Draw(self, screen):
         # star hill sphere
-        if screen.mapscale < Screen.PLANETTHRESHOLD:
-            self.color.a = 15
-            pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
-                self.mappos, self.root.time), (int(self.scorbit[MAX] * screen.mapscale)))
-            self.color.a = 255
-            self.drawTrail(screen, 0.3)
+        self.color.a = 8
+        pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
+            self.mappos, self.root.time), (int(self.scorbit[MAX] * screen.mapscale)))
+        self.color.a = 255
 
+        if screen.mapscale < Screen.PLANETTHRESHOLD:
+            self.drawTrail(screen, 0.3)
             for particle in self.particle:
                 particle.Draw(screen)
 
@@ -223,11 +224,13 @@ class Planet(Body):
     def __init__(self, parent, root, cylpos=[0, 0], name="unknown"):
         Body.__init__(self, parent, root, cylpos, name)
 
+        self.structure = None
+
         self.mass = 0         # in earth mass
         self.scorbit = [0, 0]  # Hills-Radius in AU
         self.radius = 0       # in earth radii
         self.torbit = 0
-
+        self.structure = None
         self.image = None
 
     def Create(self):
@@ -241,11 +244,17 @@ class Planet(Body):
         self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R], self.mass * Astro.Me_Msol, self.parent.mass)
         self.scorbit[MIN] = 0
 
+        self.color = pg.Color("brown")
+
+        if rd.random() < 0.5:
+            self.structure = Ring(self, self.root, self.scorbit)
+            self.structure.Create()
+
         # create moons
         i = 0
         n = 0
         while True:
-            moonorbit = Astro.TitiusBode(i, 0.01)
+            moonorbit = Astro.TitiusBode(i, 0.1*self.scorbit[MAX])
             if moonorbit > self.scorbit[MAX]:
                 break
             if moonorbit > self.scorbit[MIN]:
@@ -262,16 +271,19 @@ class Planet(Body):
             return
 
         # planet hill sphere
-        self.color = pg.Color("brown")
         self.color.a = 15
         pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
             self.mappos, self.root.time), int(self.scorbit[MAX] * screen.mapscale))
         self.color.a = 255
-        self.drawTrail(screen, 0.25)
 
         if screen.mapscale > Screen.PLANETTHRESHOLD:
+            if self.structure is not None:
+                self.structure.Draw(screen)
+
             for moon in self.child:
                 moon.Draw(screen)
+
+        self.drawTrail(screen, 0.25)
 
         image = pg.transform.rotozoom(
             self.image, -self.cylpos[PHI] / (2 * np.pi) * 360, screen.planetscale * self.radius)
