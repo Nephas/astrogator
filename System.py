@@ -51,27 +51,6 @@ class PackedSystem:
         # string to seed: int(''.join([str(ord(l)) for l in s]))%(2**32-1)
 
 
-class PackedSystem:
-    def __init__(self, pack):
-        self.main = pack.main
-        self.seed = pack.seed
-        self.name = pack.name
-        self.mass = pack.mass
-        self.mappos = pack.mappos
-        self.color = pack.color
-        self.luminosity = pack.luminosity
-
-    def getClosest(self, mappos):
-#        dists = [np.linalg.norm((mappos - body.MapPos(self.time))) for body in self.body]
-#       i = np.argmin(dists)
-        return (0,self)
-
-    def Unpack(self):
-        sys = System(self.main, mappos = self.mappos)
-        sys.UnpackSystem(self.seed, 0)
-        return sys
-
-
 class System:
     """A generic binary or singular system"""
 
