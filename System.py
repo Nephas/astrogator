@@ -52,6 +52,8 @@ class PackedSystem:
 
 
 class System:
+    """A generic binary or singular system"""
+
     MAXSIZE = 100
     RECURSION_DEPTH = 2
     STARIMAGE = pg.image.load("graphics/star.png")
@@ -136,11 +138,12 @@ class System:
 
         for comp in self.comp:
             comp.Move(dt)
-        for planet in self.child:
-            planet.Move(dt)
+        for child in self.child:
+            child.Move(dt)
 
 
 class RootSystem(System):
+    """The root class for a hierarchical multiple system"""
 
     def __init__(self, main, mass=0, name="unknown", mappos=[0, 0], binary=False):
         System.__init__(self, mass, name, cylpos=[0, 0], rank=0)
@@ -216,6 +219,7 @@ class RootSystem(System):
 
 
 class SubSystem(System):
+    """All other binaries in a hierarchical multiple system"""
 
     def __init__(self, parent, root, mass=0, name="unknown", cylpos=[0, 0], rank=0):
         System.__init__(self, mass, name, cylpos, rank, binary=True)

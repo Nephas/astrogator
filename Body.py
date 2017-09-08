@@ -56,6 +56,11 @@ class Body:
         else:
             return Screen.Pol2Cart(self.cylstart + time * self.cylvel) + self.parent.MapPos(time)
 
+    def getClosest(self, mappos):
+        refbodies = [body.getClosest(mappos) for body in self.child] + self.child + [self]
+        dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
+        return refbodies[np.argmin(dists)]
+
     def Move(self, dt):
         self.cylpos = self.cylpos + dt * self.cylvel
         self.mappos = self.MapPos(self.root.time)
