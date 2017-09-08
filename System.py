@@ -6,9 +6,8 @@ import numpy as np
 import pygame as pg
 
 from Astro import Astro
-from Planet import Planet
+from Body import Planet, Star
 from Screen import Screen
-from Star import Star
 
 R = 0
 PHI = 1
