@@ -42,7 +42,8 @@ class Sector:
             pos = Astro.pc_AU * 0.5 * \
                 np.array([np.random.normal() * self.size[X],
                           np.random.normal() * self.size[Y]])
-            system = RootSystem(self.main, mappos=pos)
+            mass = min(100, 0.5 + np.random.exponential(2))
+            system = RootSystem(self.main, mass=mass, mappos=pos)
             pack = system.Generate(rd.randint(0, 2**16), 0)
             self.system.append(pack)
 

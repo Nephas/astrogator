@@ -2,6 +2,9 @@
 * multiple star systems x
 * wind particles        x
 * sectors               x
+* black holes
+* disks
+* neutron stars
 * n-body simulation
 * small bodies
 * circularization button

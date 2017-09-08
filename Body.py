@@ -22,7 +22,10 @@ MAX = 1
 class Body:
     """Basic Planet class"""
 
+    MOONIMAGE = pg.image.load("graphics/moon.png")
+    STARIMAGE = pg.image.load("graphics/star.png")
     PLANETIMAGE = pg.image.load("graphics/planet.png")
+    HOLEIMAGE = pg.image.load("graphics/blackhole.png")
 
     def __init__(self, parent, root, cylpos=[0, 0], name="unknown"):
         self.parent = parent
@@ -56,6 +59,12 @@ class Body:
         else:
             return Screen.Pol2Cart(self.cylstart + time * self.cylvel) + self.parent.MapPos(time)
 
+    def drawTrail(self, screen, orbfrac):
+        length = min(self.root.main.screen.refbody.torbit * orbfrac, self.torbit * orbfrac)
+        times = np.linspace(self.root.time - length, self.root.time, 100 * orbfrac)
+        mappos = screen.Map2Screen(self.MapPos(times), times)
+        pg.draw.lines(screen.map[Screen.TRAIL], self.color, False, mappos)
+
     def getClosest(self, mappos):
         refbodies = [body.getClosest(mappos) for body in self.child] + self.child + [self]
         dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
@@ -72,22 +81,23 @@ class Body:
 class Star(Body):
     """A Star..."""
 
-    STARIMAGE = pg.image.load("graphics/star.png")
-
-    def __init__(self, parent, root, mass, cylpos=[0, 0], name="unknown"):
+    def __init__(self, parent, root, mass, cylpos=np.array([0, 0]), name="unknown"):
         Body.__init__(self, parent, root, cylpos, name)
 
         self.child = []
-        self.wind = []
+        self.particle = []
 
         self.mass = mass
         self.scorbit = [0, 0]          # stable circular orbit ranges
-        self.torbit = 0
+        self.torbit = 1e+15
         self.luminosity = 0     # solar lum
         self.radius = 0         # solar radii
         self.temp = 0           # Kelvin
 
     def Create(self, full=True):
+        if self.mass > 1.4 and rd.random() < 0.3:
+            self.Collapse(full)
+            return
 
         if self.cylpos[R] != 0:
             distance = self.parent.orbit[A] + self.parent.orbit[B]
@@ -102,19 +112,25 @@ class Star(Body):
         if not full:
             return
         # load graphics
-        self.image = Star.STARIMAGE.convert_alpha()
+        self.image = Body.STARIMAGE.convert_alpha()
         self.image = Screen.colorSurface(self.image.copy(), self.color)
 
-        self.scorbit[MIN] = 0.1
+        self.CreatePlanets()
+        self.EmitParticle(10)
+
+    def CreatePlanets(self, innerRadius=0.1):
+        self.scorbit[MIN] = innerRadius
         if self.scorbit[MAX] == 0:
             if self.parent.binary:
                 dist = sum(self.parent.orbit)
                 self.scorbit[MAX] = Astro.HillSphere(dist, self.mass, self.parent.mass)
+            else:
+                self.scorbit[MAX] = Astro.HillSphere(0.003 * Astro.pc_AU, self.mass, 100.)
 
         i = 0
         n = 0
         while True:
-            planetorbit = Astro.TitiusBode(i)                  # Titius Bode's law
+            planetorbit = Astro.TitiusBode(i)
             if planetorbit > self.scorbit[MAX]:
                 break
             if planetorbit > self.scorbit[MIN]:
@@ -124,34 +140,74 @@ class Star(Body):
                 n += 1
             i += 1
 
-        self.EmitParticle(10)
-
     def EmitParticle(self, n=10):
         for i in range(n):
-            self.wind.append(Particle(self, self.root, [rd.random() * self.scorbit[MAX], 0]))
+            self.particle.append(Particle(self, self.root, [rd.random() * self.scorbit[MAX], 0]))
+
+    def Collapse(self, full=True):
+        hole = BlackHole(self.parent, self.root, self.mass, self.cylpos, self.name)
+        hole.Create(full)
+        for i, comp in enumerate(self.parent.comp):
+            if comp is self:
+                self.parent.comp[i] = hole
 
     def Draw(self, screen):
         # star hill sphere
         if screen.mapscale < Screen.PLANETTHRESHOLD:
-            linecolor = self.color
-            linecolor.a = 15
-            pg.draw.circle(screen.map[Screen.GRAV], linecolor, screen.Map2Screen(
+            self.color.a = 15
+            pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
                 self.mappos, self.root.time), (int(self.scorbit[MAX] * screen.mapscale)))
-            linecolor.a = 150
+            self.color.a = 255
+            self.drawTrail(screen, 0.3)
 
-            # star trail
-            linecolor = self.color
-            length = min(self.root.main.screen.refbody.torbit / 3, self.torbit / 3)
-            times = np.linspace(self.root.time - length, self.root.time, 20)
-            mappos = screen.Map2Screen(self.MapPos(times), times)
-            pg.draw.lines(screen.map[Screen.TRAIL], linecolor, False, mappos)
-
-            for particle in self.wind:
+            for particle in self.particle:
                 particle.Draw(screen)
 
         # star image
         if Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
             image = pg.transform.rotozoom(self.image, 0, screen.starscale * self.radius)
+            screen.map[Screen.BODY].blit(image, screen.Map2Screen(
+                self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
+
+        for planet in self.child:
+            planet.Draw(screen)
+
+
+class BlackHole(Star):
+    """A Black Hole..."""
+
+    def __init__(self, parent, root, mass, cylpos=[0, 0], name="unknown"):
+        Star.__init__(self, parent, root, mass, cylpos, name)
+
+    def Create(self, full=True):
+        if self.cylpos[R] != 0:
+            distance = self.parent.orbit[A] + self.parent.orbit[B]
+            self.torbit = 365 * np.sqrt(distance**3 / self.parent.mass)  # orbital period in years from parent mass
+            self.cylvel = np.array([0, 2 * np.pi / (self.torbit)])
+
+        self.radius = self.mass
+        self.color = pg.Color(50, 50, 50)
+
+        if not full:
+            return
+
+        # load graphics
+        self.image = Body.HOLEIMAGE.convert_alpha()
+
+        self.CreatePlanets(10)
+
+    def Draw(self, screen):
+        # star hill sphere
+        if screen.mapscale < Screen.PLANETTHRESHOLD:
+            self.color.a = 15
+            pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
+                self.mappos, self.root.time), (int(self.scorbit[MAX] * screen.mapscale)))
+            self.color.a = 255
+            self.drawTrail(screen, 0.3)
+
+        # star image
+        if Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
+            image = pg.transform.rotozoom(self.image, 0, screen.starscale * 0.5 * self.radius)
             screen.map[Screen.BODY].blit(image, screen.Map2Screen(
                 self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
 
@@ -198,7 +254,7 @@ class Planet(Body):
                 n += 1
             i += 1
 
-        self.image = Planet.PLANETIMAGE.convert_alpha()
+        self.image = Body.PLANETIMAGE.convert_alpha()
         self.image = Screen.colorSurface(self.image.copy(), pg.Color("brown"))
 
     def Draw(self, screen):
@@ -206,18 +262,12 @@ class Planet(Body):
             return
 
         # planet hill sphere
-        linecolor = pg.Color("brown")
-        linecolor.a = 15
-        pg.draw.circle(screen.map[Screen.GRAV], linecolor, screen.Map2Screen(
+        self.color = pg.Color("brown")
+        self.color.a = 15
+        pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
             self.mappos, self.root.time), int(self.scorbit[MAX] * screen.mapscale))
-        linecolor.a = 255
-
-        # planet trail
-        linecolor = Screen.ColorBrightness(pg.Color("brown"), 0.8)
-        length = min(self.root.main.screen.refbody.torbit / 4, self.torbit / 4)
-        times = np.linspace(self.root.time - length, self.root.time, 20)
-        mappos = screen.Map2Screen(self.MapPos(times), times)
-        pg.draw.lines(screen.map[Screen.TRAIL], linecolor, False, mappos)
+        self.color.a = 255
+        self.drawTrail(screen, 0.25)
 
         if screen.mapscale > Screen.PLANETTHRESHOLD:
             for moon in self.child:
@@ -232,8 +282,6 @@ class Planet(Body):
 class Moon(Body):
     """Basic Moon class"""
 
-    MOONIMAGE = pg.image.load("graphics/moon.png")
-
     def __init__(self, parent, root, cylpos=[0, 0], name="unknown"):
         Body.__init__(self, parent, root, cylpos, name)
 
@@ -243,25 +291,22 @@ class Moon(Body):
         self.image = None
 
     def Create(self):
-        self.mass = np.random.uniform() / 10
+        self.mass = np.random.uniform(0.01, 0.1) * self.parent.mass
+        self.radius = Astro.PlanetRadius(self.mass)
 
         # setup circular orbit
         # orbital period in days from parent mass
         self.torbit = 365 * np.sqrt(self.cylpos[R]**3 / (Astro.Me_Msol * self.parent.mass))
         self.cylvel = np.array([0, 2 * np.pi / self.torbit])
 
-        self.image = Moon.MOONIMAGE.convert_alpha()
+        self.image = Body.MOONIMAGE.convert_alpha()
         self.image = Screen.colorSurface(self.image.copy(), pg.Color("darkgray"))
 
     def Draw(self, screen):
         if not Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
             return
 
-        linecolor = pg.Color("darkgray")
-        length = min(self.root.main.screen.refbody.torbit / 6, self.torbit / 6)
-        times = np.linspace(self.root.time - length, self.root.time, 10)
-        mappos = screen.Map2Screen(self.MapPos(times), times)
-        pg.draw.lines(screen.map[Screen.TRAIL], linecolor, False, mappos)
+        self.drawTrail(screen, 0.15)
 
         image = pg.transform.rotozoom(
             self.image, -self.parent.cylpos[PHI] / (2 * np.pi) * 360, screen.planetscale * self.radius)

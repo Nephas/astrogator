@@ -18,7 +18,7 @@ class Screen:
 
     SIZE = np.array([1024, 768])
     SYSTEMTHRESHOLD = 0.1
-    PLANETTHRESHOLD = 500
+    PLANETTHRESHOLD = 250
 
     GRAV = 2
     TRAIL = 1

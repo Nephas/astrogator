@@ -22,9 +22,10 @@ MAX = 1
 class PackedSystem:
     """A compact system representation containing the star graphics and system seed"""
 
-    def __init__(self, pack):
+    def __init__(self, pack, seed):
+        self.seed = seed
+
         self.main = pack.main
-        self.seed = pack.seed
         self.name = pack.name
         self.mass = pack.mass
         self.mappos = pack.mappos
@@ -33,18 +34,14 @@ class PackedSystem:
         self.image = pg.transform.scale(System.STARIMAGE.convert_alpha(), (24, 24))
         self.image = Screen.colorSurface(self.image, pack.color)
         self.luminosity = pack.luminosity
-        self.mag = -2.5 * np.log10(pack.luminosity) - 25
+        self.mag = -2.5 * np.log10(max(0.01, pack.luminosity)) - 25
 
     def Unpack(self):
         """Unpack the system, returning a full scale System() object"""
+        system = RootSystem(self.main, mass=self.mass, mappos=self.mappos)
         rd.seed(self.seed)
         np.random.seed(self.seed)
 
-        system = RootSystem(self.main, mappos=self.mappos)
-        system.seed = self.seed
-        system.mass = self.mass
-        system.name = self.name
-        system.binary = self.binary
         system.Create(full=True)
         return system
 
@@ -155,16 +152,15 @@ class RootSystem(System):
     def Generate(self, seed=0, time=0):
         rd.seed(seed)
         np.random.seed(seed)
-        self.seed = seed
 
-        self.mass = min(100, 0.5 + np.random.exponential(2))
+        self.Create(full=False)
+        return PackedSystem(self, seed)
+
+    def Create(self, full=True):
         self.name = "HIP " + str(rd.randint(10000, 99999))
         if rd.random() < 0.5:
             self.binary = True
-        self.Create(full=False)
-        return PackedSystem(self)
 
-    def Create(self, full=True):
         # Binary System
         if self.binary:
             massA = rd.uniform(0.5, 0.9) * self.mass
@@ -193,9 +189,6 @@ class RootSystem(System):
             return
         # create graphis
         pg.draw.circle(self.cmsImage, self.color, [5, 5], 5)
-
-        # Maximum System size criterion: should be stable against close flybys
-        self.scorbit[MAX] = Astro.HillSphere(0.003 * Astro.pc_AU, self.mass, 100.)  # System.MAXSIZE
 
         # create planets
         if self.binary:
