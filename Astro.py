@@ -1,8 +1,14 @@
-from globals import *
+"""Author: Marco Fink"""
+
+import numpy as np
+import pygame as pg
+
 
 class Astro:
+    """A collection of astrophysical constants and Formulae"""
+
     G = 0.000296329    # AU^3 d^-2 Mo^-1
-    Msol_Me = 333000. # Mogelfaktor
+    Msol_Me = 333000.  # Mogelfaktor
     Me_Msol = 1 / Msol_Me
     pc_AU = 206264.8    # pc in AU
     AU_pc = 1 / pc_AU
@@ -71,7 +77,7 @@ class Astro:
             color = pg.Color("lightyellow")
         elif T < 10000:
             SC = "A"
-            color = pg.Color("white")
+            color = pg.Color("lightgray")
         elif T < 30000:
             SC = "B"
             color = pg.Color("lightblue")
@@ -83,7 +89,7 @@ class Astro:
 
     @staticmethod
     def HillSphere(a, m, M):  # two body distance, body mass, parent mass
-        return 0.9*a * (m / (3 * M))**(0.333)
+        return 0.9 * a * (m / (3 * M))**(0.333)
 
     @staticmethod
     def PlanetRadius(M):
