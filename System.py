@@ -31,7 +31,7 @@ class PackedSystem:
         self.mappos = pack.mappos
         self.binary = pack.binary
         self.color = pack.color
-        self.image = pg.transform.scale(System.STARIMAGE.convert_alpha(), (24, 24))
+        self.image = pg.transform.scale(System.STARIMAGE.convert_alpha(), (32, 32))
         self.image = Screen.colorSurface(self.image, pack.color)
         self.luminosity = pack.luminosity
         self.mag = -2.5 * np.log10(max(0.01, pack.luminosity)) - 25
@@ -50,8 +50,8 @@ class PackedSystem:
     def Draw(self, screen):
         if Screen.Contains(screen.Map2Screen(self.mappos, self.main.world.time)):
             image = pg.transform.rotozoom(
-                self.image, 0, - 5 * screen.starscale * self.mag)
-            screen.map[Screen.BODY].blit(image, screen.Map2Screen(
+                self.image, 0, - 10 * screen.starscale * self.mag)
+            screen.map['BODY'].blit(image, screen.Map2Screen(
                 self.mappos, self.main.world.time) - np.array(image.get_size()) * 0.5)
 
 
@@ -60,7 +60,7 @@ class System:
 
     MAXSIZE = 100
     RECURSION_DEPTH = 2
-    STARIMAGE = pg.image.load("graphics/star.png")
+    STARIMAGE = pg.image.load("graphics/airy.png")
 
     def __init__(self, mass=0, name="unknown", cylpos=[0, 0], rank=0, binary=False):
         self.name = name
@@ -120,10 +120,10 @@ class System:
         # stability zone and CoM
         if self.binary and screen.mapscale < Screen.PLANETTHRESHOLD:
             self.color.a = 8
-            pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
+            pg.draw.circle(screen.map['GRAV'], self.color, screen.Map2Screen(
                 self.mappos, self.root.time), int(self.scorbit[MAX] * screen.mapscale))
             self.color.a = 0
-            pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
+            pg.draw.circle(screen.map['GRAV'], self.color, screen.Map2Screen(
                 self.mappos, self.root.time), int(self.scorbit[MIN] * screen.mapscale))
             self.color.a = 255
 
@@ -133,7 +133,7 @@ class System:
             planet.Draw(screen)
 
         image = pg.transform.rotozoom(self.cmsImage, 0, 0.2)
-        screen.map[Screen.BODY].blit(image, screen.Map2Screen(
+        screen.map['BODY'].blit(image, screen.Map2Screen(
             self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
 
     def Move(self, dt=0):

@@ -1,12 +1,8 @@
 """Author: Marco Fink"""
 
-import random as rd
 
-import numpy as np
 import pygame as pg
 
-from Astro import Astro
-from Particle import Wave
 from Screen import Screen
 
 R = 0
@@ -20,7 +16,7 @@ MAX = 1
 
 
 class Structure:
-
+    """Base class for system spanning extended structures"""
     def __init__(self, parent, root, scorbit=[0, 0], color=pg.Color("white")):
         self.parent = parent
         self.root = root
@@ -36,7 +32,7 @@ class Structure:
 class Ring(Structure):
     """A planetary ring"""
 
-    def __init__(self, parent, root, scorbit=[0, 0] ):
+    def __init__(self, parent, root, scorbit=[0, 0]):
         Structure.__init__(self, parent, root, scorbit=scorbit)
 
         self.orbits = []
@@ -49,14 +45,14 @@ class Ring(Structure):
         # create moons
         ringorbit = 0.1 * self.scorbit[MAX]
         while True:
-            if ringorbit > 0.5*self.scorbit[MAX]:
+            if ringorbit > 0.5 * self.scorbit[MAX]:
                 break
             self.orbits.append([ringorbit, 0.1 * ringorbit])
             ringorbit *= 1.2
 
     def Draw(self, screen):
         for orbit in self.orbits:
-            pg.draw.circle(screen.map[Screen.TRAIL], self.color, screen.Map2Screen(
+            pg.draw.circle(screen.map['TRAIL'], self.color, screen.Map2Screen(
                 self.parent.mappos, self.root.time), int(orbit[0] * screen.mapscale), int(orbit[1] * screen.mapscale))
 
 

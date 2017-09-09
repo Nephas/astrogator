@@ -33,7 +33,7 @@ class Wave:
     def Draw(self, screen):
         r = int(self.cylpos[R] * self.root.main.screen.mapscale + 1)
         color = Screen.ColorBrightness(self.parent.color, 0.1 + 0.5 * (1 - self.cylpos[R] / self.parent.scorbit[MAX]))
-        pg.draw.circle(screen.map[Screen.TRAIL], color, screen.Map2Screen(
+        pg.draw.circle(screen.map['TRAIL'], color, screen.Map2Screen(
             self.parent.mappos, self.root.time).astype(int), int(r), 1)
 
     def MapPos(self, time=0):

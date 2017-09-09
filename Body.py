@@ -64,7 +64,7 @@ class Body:
         length = min(self.root.main.screen.refbody.torbit * orbfrac, self.torbit * orbfrac)
         times = np.linspace(self.root.time - length, self.root.time, 100 * orbfrac)
         mappos = screen.Map2Screen(self.MapPos(times), times)
-        pg.draw.lines(screen.map[Screen.TRAIL], self.color, False, mappos)
+        pg.draw.lines(screen.map['TRAIL'], self.color, False, mappos)
 
     def getClosest(self, mappos):
         refbodies = [body.getClosest(mappos) for body in self.child] + self.child + [self]
@@ -155,7 +155,7 @@ class Star(Body):
     def Draw(self, screen):
         # star hill sphere
         self.color.a = 8
-        pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
+        pg.draw.circle(screen.map['GRAV'], self.color, screen.Map2Screen(
             self.mappos, self.root.time), (int(self.scorbit[MAX] * screen.mapscale)))
         self.color.a = 255
 
@@ -167,7 +167,7 @@ class Star(Body):
         # star image
         if Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
             image = pg.transform.rotozoom(self.image, 0, screen.starscale * self.radius)
-            screen.map[Screen.BODY].blit(image, screen.Map2Screen(
+            screen.map['BODY'].blit(image, screen.Map2Screen(
                 self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
 
         for planet in self.child:
@@ -200,8 +200,8 @@ class BlackHole(Star):
     def Draw(self, screen):
         # star hill sphere
         if screen.mapscale < Screen.PLANETTHRESHOLD:
-            self.color.a = 15
-            pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
+            self.color.a = 32
+            pg.draw.circle(screen.map['GRAV'], self.color, screen.Map2Screen(
                 self.mappos, self.root.time), (int(self.scorbit[MAX] * screen.mapscale)))
             self.color.a = 255
             self.drawTrail(screen, 0.3)
@@ -209,7 +209,7 @@ class BlackHole(Star):
         # star image
         if Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
             image = pg.transform.rotozoom(self.image, 0, screen.starscale * 0.5 * self.radius)
-            screen.map[Screen.BODY].blit(image, screen.Map2Screen(
+            screen.map['BODY'].blit(image, screen.Map2Screen(
                 self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
 
         for planet in self.child:
@@ -272,7 +272,7 @@ class Planet(Body):
 
         # planet hill sphere
         self.color.a = 15
-        pg.draw.circle(screen.map[Screen.GRAV], self.color, screen.Map2Screen(
+        pg.draw.circle(screen.map['GRAV'], self.color, screen.Map2Screen(
             self.mappos, self.root.time), int(self.scorbit[MAX] * screen.mapscale))
         self.color.a = 255
 
@@ -287,7 +287,7 @@ class Planet(Body):
 
         image = pg.transform.rotozoom(
             self.image, -self.cylpos[PHI] / (2 * np.pi) * 360, screen.planetscale * self.radius)
-        screen.map[Screen.BODY].blit(image, screen.Map2Screen(
+        screen.map['BODY'].blit(image, screen.Map2Screen(
             self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
 
 
@@ -322,5 +322,5 @@ class Moon(Body):
 
         image = pg.transform.rotozoom(
             self.image, -self.parent.cylpos[PHI] / (2 * np.pi) * 360, screen.planetscale * self.radius)
-        screen.map[Screen.BODY].blit(image, screen.Map2Screen(
+        screen.map['BODY'].blit(image, screen.Map2Screen(
             self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)

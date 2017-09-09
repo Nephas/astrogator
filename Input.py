@@ -36,7 +36,7 @@ class Input:
         elif keyname == "tab":
             self.main.world.changeFocus(rd.choice(self.main.world.system))
         elif keyname == "left shift":
-            self.main.screen.refbody = rd.choice(self.main.world.body)
+            self.main.world.changeFocus(rd.choice(self.main.world.system))
 
         # elif keyname == "right":
         #     self.main.world.ship[0].orientation += 0.2

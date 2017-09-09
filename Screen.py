@@ -20,10 +20,6 @@ class Screen:
     SYSTEMTHRESHOLD = 0.1
     PLANETTHRESHOLD = 50
 
-    GRAV = 2
-    TRAIL = 1
-    BODY = 0
-
     def __init__(self, main):
         self.main = main
         self.display = pg.display.set_mode(Screen.SIZE)
@@ -31,7 +27,10 @@ class Screen:
         self.back = pg.Surface(Screen.SIZE)
         self.back.fill(pg.Color("black"))
 
-        self.map = [pg.Surface(Screen.SIZE, flags=pg.SRCALPHA)] * 3
+        self.map = {'GRAV': pg.Surface(Screen.SIZE, flags=pg.SRCALPHA),
+                    'TRAIL': pg.Surface(Screen.SIZE, flags=pg.SRCALPHA),
+                    'BODY': pg.Surface(Screen.SIZE, flags=pg.SRCALPHA)}
+
         self.gui = pg.Surface(Screen.SIZE, flags=pg.SRCALPHA)
         self.font = pg.font.SysFont("Arial", 12)
 
@@ -44,21 +43,20 @@ class Screen:
 
     def RenderAll(self, gui=False):
         self.display.blit(self.back, (0, 0))
-        for layer in self.map:
-            self.display.blit(layer, (0, 0))
+        for layer in ['GRAV', 'TRAIL', 'BODY']:
+            self.display.blit(self.map[layer], (0, 0))
         self.display.blit(self.gui, (0, 0))
 
         pg.display.flip()
 
     def RenderMap(self):
         for layer in self.map:
-            layer.fill(pg.Color(0, 0, 0, 0))
+            self.map[layer].fill(pg.Color(0, 0, 0, 0))
         self.main.world.Draw(self)
 
     def RenderGui(self):
         self.gui.fill(pg.Color(0, 0, 0, 0))
-        linecolor = pg.Color("white")
-        linecolor.a = 50
+        linecolor = pg.Color(255, 255, 255, 64)
 
         pg.draw.line(self.gui, linecolor, (Screen.SIZE[X] / 2, 0), (Screen.SIZE[X] / 2, Screen.SIZE[Y]))
         pg.draw.line(self.gui, linecolor, (0, Screen.SIZE[Y] / 2), (Screen.SIZE[X], Screen.SIZE[Y] / 2))
