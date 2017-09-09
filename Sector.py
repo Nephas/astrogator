@@ -24,7 +24,7 @@ class Sector:
 
     STARIMAGE = pg.image.load("graphics/star.png")
 
-    def __init__(self, main, size=[20, 20], density=0.5):
+    def __init__(self, main, size=[10, 10], density=0.5):
         self.main = main
         self.time = 0
         self.system = []
@@ -51,6 +51,8 @@ class Sector:
             if i % 100 == 0:
                 print("  " + str(i) + "/" + str(numStars))
 
+        self.system = sorted(list(set(self.system)), key=lambda sys: -sys.mag)
+
         self.refsystem = rd.choice(self.system)
         self.activesystem = self.refsystem.Unpack()
         self.main.screen.refbody = self.activesystem
@@ -61,7 +63,8 @@ class Sector:
             for system in self.system:
                 system.Draw(screen)
         else:
-            self.activesystem.Draw(screen)
+            for body in self.main.screen.refbody.getHierarchy():
+                body.Draw(screen)
 
     def Move(self, dt):
         self.time += dt

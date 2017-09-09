@@ -142,6 +142,14 @@ class System:
                 n += 1
             i += 1
 
+    def getHierarchy(self):
+        hierarchy = [self]
+        body = self
+        while body is not self.root:
+            body = body.parent
+            hierarchy.insert(0, body)
+        return hierarchy
+
     def getClosest(self, mappos):
         refbodies = [body.getClosest(mappos) for body in self.comp + self.child] + self.child + [self]
         dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
@@ -161,7 +169,8 @@ class System:
         for comp in self.comp:
             comp.Draw(screen)
         for planet in self.child:
-            planet.Draw(screen)
+            if Screen.Contains(screen.Map2Screen(planet.mappos, self.root.time)):
+                planet.Draw(screen)
 
         image = pg.transform.rotozoom(self.cmsImage, 0, 0.2)
         screen.map['BODY'].blit(image, screen.Map2Screen(

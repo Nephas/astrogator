@@ -6,7 +6,6 @@ import numpy as np
 import pygame as pg
 
 from Astro import Astro
-from Particle import Wave
 from Screen import Screen
 from Structure import Ring
 
@@ -70,6 +69,14 @@ class Body:
         dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
         return refbodies[np.argmin(dists)]
 
+    def getHierarchy(self):
+        hierarchy = [self]
+        body = self
+        while body is not self.root:
+            body = body.parent
+            hierarchy.insert(0, body)
+        return hierarchy
+
     def Move(self, dt):
         self.cylpos = self.cylpos + dt * self.cylvel
         self.mappos = self.MapPos(self.root.time)
@@ -85,7 +92,6 @@ class Star(Body):
         Body.__init__(self, parent, root, cylpos, name)
 
         self.structure = None
-        self.particle = []
 
         self.mass = mass
         self.scorbit = [0, 0]          # stable circular orbit ranges
@@ -116,7 +122,6 @@ class Star(Body):
         self.image = Screen.colorSurface(self.image.copy(), self.color)
 
         self.CreatePlanets()
-        self.EmitParticle(10)
 
     def CreatePlanets(self, innerRadius=0.1):
         self.scorbit[MIN] = innerRadius
@@ -140,10 +145,6 @@ class Star(Body):
                 n += 1
             i += 1
 
-    def EmitParticle(self, n=10):
-        for i in range(n):
-            self.particle.append(Wave(self, self.root, [rd.random() * self.scorbit[MAX], 0]))
-
     def Collapse(self, full=True):
         hole = BlackHole(self.parent, self.root, self.mass, self.cylpos, self.name)
         hole.Create(full)
@@ -160,8 +161,6 @@ class Star(Body):
 
         if screen.mapscale < Screen.PLANETTHRESHOLD:
             self.drawTrail(screen, 0.3)
-            for particle in self.particle:
-                particle.Draw(screen)
 
         # star image
         if Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
@@ -170,7 +169,8 @@ class Star(Body):
                 self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
 
         for planet in self.child:
-            planet.Draw(screen)
+            if Screen.Contains(screen.Map2Screen(planet.mappos, self.root.time)):
+                planet.Draw(screen)
 
 
 class BlackHole(Star):
@@ -245,10 +245,6 @@ class Planet(Body):
 
         self.color = pg.Color("brown")
 
-        if rd.random() < 0.5:
-            self.structure = Ring(self, self.root, self.scorbit)
-            self.structure.Create()
-
         # create moons
         i = 0
         n = 0
@@ -266,9 +262,6 @@ class Planet(Body):
         self.image = Screen.colorSurface(self.image.copy(), pg.Color("brown"))
 
     def Draw(self, screen):
-        if not Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
-            return
-
         # planet hill sphere
         self.color.a = 15
         pg.draw.circle(screen.map['GRAV'], self.color, screen.Map2Screen(
@@ -280,7 +273,8 @@ class Planet(Body):
                 self.structure.Draw(screen)
 
             for moon in self.child:
-                moon.Draw(screen)
+                if Screen.Contains(screen.Map2Screen(moon.mappos, self.root.time)):
+                    moon.Draw(screen)
 
         self.drawTrail(screen, 0.25)
 
@@ -314,10 +308,8 @@ class Moon(Body):
         self.image = Screen.colorSurface(self.image.copy(), pg.Color("darkgray"))
 
     def Draw(self, screen):
-        if not Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
-            return
 
-        self.drawTrail(screen, 0.15)
+        self.drawTrail(screen, 0.1)
 
         image = pg.transform.rotozoom(
             self.image, -self.parent.cylpos[PHI] / (2 * np.pi) * 360, screen.planetscale * self.radius)

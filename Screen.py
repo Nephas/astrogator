@@ -62,7 +62,7 @@ class Screen:
         pg.draw.line(self.gui, linecolor, (Screen.SIZE[X] / 2, 0), (Screen.SIZE[X] / 2, Screen.SIZE[Y]))
         pg.draw.line(self.gui, linecolor, (0, Screen.SIZE[Y] / 2), (Screen.SIZE[X], Screen.SIZE[Y] / 2))
 
-        info = ["Time-step: " + str(self.main.stepsize) + " days/tick",
+        info = ["Time-step: " + str(self.main.stepsize * self.main.TPS) + " days/s",
                 "Time: " + str(self.main.world.time) + " days",
                 "Mapscale: " + str(self.mapscale),
                 "Planetscale: " + str(self.planetscale),
