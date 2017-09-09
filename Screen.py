@@ -82,7 +82,7 @@ class Screen:
         for i, line in enumerate(bodyinfo):
             self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 160))
 
-        self.MouseArrow()
+#        self.MouseArrow()
 
     def MouseArrow(self):
         pos = np.array(pg.mouse.get_pos())

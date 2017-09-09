@@ -25,6 +25,7 @@ class Main:
         pg.PAUSE = 29
 
         pg.init()
+        self.steplimit = 1000
         self.stepsize = 0.1             # stepsize in days/timestep, max
         self.screen = Screen(self)      # Main display Surface
         self.input = Input(self)

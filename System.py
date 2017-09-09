@@ -8,6 +8,7 @@ import pygame as pg
 
 from Astro import Astro
 from Body import Planet, Star
+from Minor import MinorBody
 from Screen import Screen
 
 R = 0
@@ -252,6 +253,13 @@ class RootSystem(System):
             self.CreatePlanets()
 
         self.major = map(lambda b: (b, b.mass), self.getMajorBodies())
+        ship = MinorBody(self, [0, 2.0],[-Astro.vOrbit(2.0,self.mass), 0])
+        self.minor.append(ship)
+
+    def getClosest(self, mappos):
+        refbodies = [body.getClosest(mappos) for body in self.comp + self.child] + self.child + self.minor
+        dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
+        return refbodies[np.argmin(dists)]
 
     def MapPos(self, time=0):
         if type(time) == np.ndarray:
@@ -262,8 +270,6 @@ class RootSystem(System):
             return self.mappos
 
     def Acc(self, mappos, time=0):
-        #        ts=t.time()
-
         mass = np.array(map(lambda mb: mb[1], self.major))
 
         pos = np.ndarray((len(self.major), 2))
@@ -273,11 +279,8 @@ class RootSystem(System):
         bodypos[:, :] = map(lambda mb: mb[0].mappos, self.major)
 
         diff = pos - bodypos
-        g = np.power(np.linalg.norm(diff, axis=1), -2) * mass
-        acc = -Astro.G * np.sum((diff.transpose() * g), axis=1)
-
-#        print(ts-t.time())
-
+        g = np.power(np.linalg.norm(diff, axis=1), -3) * mass
+        acc = - Astro.G * np.sum((diff.transpose() * g), axis=1)
         return acc
 
     def Move(self, dt=0):
@@ -287,7 +290,8 @@ class RootSystem(System):
             comp.Move(dt)
         for planet in self.child:
             planet.Move(dt)
-
+        for body in self.minor:
+            body.Move(dt)
 
 class SubSystem(System):
     """All other binaries in a hierarchical multiple system"""

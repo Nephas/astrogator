@@ -65,6 +65,8 @@ class Sector:
         else:
             for body in self.main.screen.refbody.getHierarchy():
                 body.Draw(screen)
+        for body in self.activesystem.minor:
+            body.Draw(screen)
 
     def Move(self, dt):
         self.time += dt

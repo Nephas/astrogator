@@ -94,3 +94,8 @@ class Astro:
     @staticmethod
     def PlanetRadius(M):
         return 1. / Astro.Rearth * ((3. * M * Astro.Mearth) / (4. * np.pi * Astro.rho))**(0.333)
+
+    @staticmethod
+    def vOrbit(r, M):  # in AU/day
+        tOrb = 365 * np.sqrt(r**3 / M)
+        return 2*np.pi*r/tOrb
