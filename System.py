@@ -25,10 +25,13 @@ class PackedSystem:
     def __init__(self, pack, seed):
         self.seed = seed
 
+        self.mappos = np.array([0, 0])
+        self.mapstart = pack.mappos
+        self.mapvel = np.array([np.random.normal(), np.random.normal()])
+
         self.main = pack.main
         self.name = pack.name
         self.mass = pack.mass
-        self.mappos = pack.mappos
         self.binary = pack.binary
         self.color = pack.color
         self.image = pg.transform.scale(System.STARIMAGE.convert_alpha(), (32, 32))
@@ -47,12 +50,40 @@ class PackedSystem:
 
         # string to seed: int(''.join([str(ord(l)) for l in s]))%(2**32-1)
 
+    def MapPos(self, time=0):
+        """Get positions for a list of times: [t1] -> [x1,y1]"""
+        if type(time) == np.ndarray:
+            t = np.ndarray((len(time), 2))
+            ms = np.ndarray((len(time), 2))
+            mv = np.ndarray((len(time), 2))
+
+            t[:, X] = time
+            t[:, Y] = time
+            ms[:, :] = self.mapstart[:]
+            mv[:, :] = self.mapvel[:]
+
+            return ms + mv * t
+        else:
+            return self.mapstart + time * self.mapvel
+
+    def drawTrail(self, screen):
+        length = 36500
+        self.color.a = 32
+        times = np.linspace(self.main.world.time - length, self.main.world.time, 5)
+        mappos = screen.Map2Screen(self.MapPos(times), times)
+        pg.draw.lines(screen.map['TRAIL'], self.color, False, mappos)
+        self.color.a = 255
+
     def Draw(self, screen):
         if Screen.Contains(screen.Map2Screen(self.mappos, self.main.world.time)):
             image = pg.transform.rotozoom(
                 self.image, 0, - 10 * screen.starscale * self.mag)
             screen.map['BODY'].blit(image, screen.Map2Screen(
                 self.mappos, self.main.world.time) - np.array(image.get_size()) * 0.5)
+            self.drawTrail(screen)
+
+    def Move(self, dt=0):
+        self.mappos = self.MapPos(self.main.world.time)
 
 
 class System:

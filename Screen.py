@@ -40,6 +40,7 @@ class Screen:
         self.planetscale = 0.01
 
         self.refbody = None
+        self.refsystem = None
 
     def RenderAll(self, gui=False):
         self.display.blit(self.back, (0, 0))
@@ -73,12 +74,22 @@ class Screen:
 
     # Coordinate transformation from mapspace to screenspace
     def Map2Screen(self, mappos, time=0):
-        screenpos = Screen.SIZE / 2. + self.mapscale * (mappos - self.refbody.MapPos(time))
+        if self.mapscale > Screen.SYSTEMTHRESHOLD:
+            ref = self.refbody
+        else:
+            ref = self.refsystem
+
+        screenpos = Screen.SIZE / 2. + self.mapscale * (mappos - ref.MapPos(time))
         return screenpos.astype(int)
 
     # Coordinate transformation from mapspace to screenspace
     def Screen2Map(self, screenpos, time=0):
-        mappos = (screenpos - Screen.SIZE / 2.) / self.mapscale + self.refbody.MapPos(time)
+        if self.mapscale > Screen.SYSTEMTHRESHOLD:
+            ref = self.refbody
+        else:
+            ref = self.refsystem
+
+        mappos = (screenpos - Screen.SIZE / 2.) / self.mapscale + ref.MapPos(time)
         return mappos
 
     def Zoom(self, closer=True):
@@ -108,13 +119,13 @@ class Screen:
 
     @staticmethod
     def Pol2Cart(cylpos):
-        # transform an array or list of shape:
-        # [r1, phi1]    [x1,y1]
-        # [r2, phi2] -> [x2,y2]
-        # [r3, phi3]    [x3,y3]
-        if type(cylpos) == list:
-            return [np.array([np.cos(pos[PHI]), np.sin(pos[PHI])]) * pos[R] for pos in cylpos]
-        elif type(cylpos) == np.ndarray:
+        r"""Transform an array or list of shape:\n
+
+        [r1, phi1]    [x1,y1]\n
+        [r2, phi2] -> [x2,y2]\n
+        [r3, phi3]    [x3,y3]\n
+        """
+        if type(cylpos) == np.ndarray:
             if cylpos.ndim == 1:
                 return np.array([np.cos(cylpos[PHI]), np.sin(cylpos[PHI])]) * cylpos[R]
 

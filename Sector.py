@@ -24,11 +24,12 @@ class Sector:
 
     STARIMAGE = pg.image.load("graphics/star.png")
 
-    def __init__(self, main, size=[25, 25], density=0.5):
+    def __init__(self, main, size=[20, 20], density=0.5):
         self.main = main
         self.time = 0
         self.system = []
         self.activesystem = None
+        self.refsystem = None
         self.density = density      # in stars / pc^2
         self.size = size            # in pc
 
@@ -50,8 +51,10 @@ class Sector:
             if i % 100 == 0:
                 print("  " + str(i) + "/" + str(numStars))
 
-        self.activesystem = rd.choice(self.system).Unpack()
+        self.refsystem = rd.choice(self.system)
+        self.activesystem = self.refsystem.Unpack()
         self.main.screen.refbody = self.activesystem
+        self.main.screen.refsystem = self.refsystem
 
     def Draw(self, screen):
         if screen.mapscale < Screen.SYSTEMTHRESHOLD:
@@ -63,6 +66,8 @@ class Sector:
     def Move(self, dt):
         self.time += dt
         self.activesystem.Move(dt)
+        for system in self.system:
+            system.Move()
 
     def printTerm(self, indent=""):
         """Dummy"""
@@ -88,5 +93,7 @@ class Sector:
         if hasattr(body, 'root') and body.root is self.activesystem:
             self.main.screen.refbody = body
         elif body is not self.activesystem:
+            self.refsystem = body
             self.activesystem = body.Unpack()
             self.main.screen.refbody = self.activesystem
+            self.main.screen.refsystem = self.refsystem

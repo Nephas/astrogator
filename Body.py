@@ -7,8 +7,8 @@ import pygame as pg
 
 from Astro import Astro
 from Particle import Wave
-from Structure import Ring
 from Screen import Screen
+from Structure import Ring
 
 R = 0
 PHI = 1
@@ -43,17 +43,14 @@ class Body:
 
     def MapPos(self, time=0):
         """Get positions for a list of times: [t2] -> [x2,y2]"""
-        if type(time) == list:
-            return [Screen.Pol2Cart(self.cylstart + t * self.cylvel) + self.parent.MapPos(t) for t in time]
-        elif type(time) == np.ndarray:
+        if type(time) == np.ndarray:
             t = np.ndarray((len(time), 2))
+            cs = np.ndarray((len(time), 2))
+            cv = np.ndarray((len(time), 2))
+
             t[:, R] = time
             t[:, PHI] = time
-
-            cs = np.ndarray((len(time), 2))
             cs[:, :] = self.cylstart[:]
-
-            cv = np.ndarray((len(time), 2))
             cv[:, :] = self.cylvel[:]
 
             return Screen.Pol2Cart(cs + cv * t) + self.parent.MapPos(time)
@@ -61,10 +58,12 @@ class Body:
             return Screen.Pol2Cart(self.cylstart + time * self.cylvel) + self.parent.MapPos(time)
 
     def drawTrail(self, screen, orbfrac):
+        self.color.a = 128
         length = min(self.root.main.screen.refbody.torbit * orbfrac, self.torbit * orbfrac)
         times = np.linspace(self.root.time - length, self.root.time, 100 * orbfrac)
         mappos = screen.Map2Screen(self.MapPos(times), times)
         pg.draw.lines(screen.map['TRAIL'], self.color, False, mappos)
+        self.color.a = 255
 
     def getClosest(self, mappos):
         refbodies = [body.getClosest(mappos) for body in self.child] + self.child + [self]
@@ -254,7 +253,7 @@ class Planet(Body):
         i = 0
         n = 0
         while True:
-            moonorbit = Astro.TitiusBode(i, 0.1*self.scorbit[MAX])
+            moonorbit = Astro.TitiusBode(i, 0.1 * self.scorbit[MAX])
             if moonorbit > self.scorbit[MAX]:
                 break
             if moonorbit > self.scorbit[MIN]:

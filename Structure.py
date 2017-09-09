@@ -3,8 +3,6 @@
 
 import pygame as pg
 
-from Screen import Screen
-
 R = 0
 PHI = 1
 X = 0
@@ -17,6 +15,7 @@ MAX = 1
 
 class Structure:
     """Base class for system spanning extended structures"""
+
     def __init__(self, parent, root, scorbit=[0, 0], color=pg.Color("white")):
         self.parent = parent
         self.root = root
