@@ -72,6 +72,15 @@ class Screen:
         for i, line in enumerate(info):
             self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 10))
 
+        bodyinfo = []
+
+        for i, body in enumerate(self.main.screen.refbody.getHierarchy()):
+            bodyinfo.append(i * ' ' + body.name)
+
+        for i, line in enumerate(bodyinfo):
+            self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 100))
+
+
     # Coordinate transformation from mapspace to screenspace
     def Map2Screen(self, mappos, time=0):
         if self.mapscale > Screen.SYSTEMTHRESHOLD:
