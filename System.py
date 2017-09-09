@@ -1,6 +1,7 @@
 """Author: Marco Fink"""
 
 import random as rd
+import time as t
 
 import numpy as np
 import pygame as pg
@@ -155,6 +156,12 @@ class System:
         dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
         return refbodies[np.argmin(dists)]
 
+    def getMajorBodies(self):
+        bodies = []
+        for comp in self.comp:
+            bodies += comp.getMajorBodies()
+        return bodies + self.child
+
     def Draw(self, screen):
         # stability zone and CoM
         if self.binary and screen.mapscale < Screen.PLANETTHRESHOLD:
@@ -177,7 +184,6 @@ class System:
             self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
 
     def Move(self, dt=0):
-        self.cylpos = self.cylpos + dt * self.cylvel
         self.mappos = self.MapPos(self.root.time)
 
         for comp in self.comp:
@@ -195,6 +201,9 @@ class RootSystem(System):
         self.root = self
         self.time = main.world.time
         self.mappos = mappos
+
+        self.major = []  # a list of major bodies and their solar masses
+        self.minor = []  # a list of minor bodies in the n-body potential
 
     def Generate(self, seed=0, time=0):
         rd.seed(seed)
@@ -242,6 +251,8 @@ class RootSystem(System):
             self.scorbit[MIN] = self.orbit[B] + self.comp[B].scorbit[MAX]
             self.CreatePlanets()
 
+        self.major = map(lambda b: (b, b.mass), self.getMajorBodies())
+
     def MapPos(self, time=0):
         if type(time) == np.ndarray:
             pos = np.ndarray((len(time), 2))
@@ -249,6 +260,25 @@ class RootSystem(System):
             return pos
         else:
             return self.mappos
+
+    def Acc(self, mappos, time=0):
+        #        ts=t.time()
+
+        mass = np.array(map(lambda mb: mb[1], self.major))
+
+        pos = np.ndarray((len(self.major), 2))
+        pos[:, :] = mappos[:]
+
+        bodypos = np.ndarray((len(self.major), 2))
+        bodypos[:, :] = map(lambda mb: mb[0].mappos, self.major)
+
+        diff = pos - bodypos
+        g = np.power(np.linalg.norm(diff, axis=1), -2) * mass
+        acc = -Astro.G * np.sum((diff.transpose() * g), axis=1)
+
+#        print(ts-t.time())
+
+        return acc
 
     def Move(self, dt=0):
         self.time += dt

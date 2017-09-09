@@ -7,7 +7,6 @@ import pygame as pg
 
 from Astro import Astro
 from Screen import Screen
-from Structure import Ring
 
 R = 0
 PHI = 1
@@ -31,6 +30,7 @@ class Body:
         self.parent = parent
         self.root = root
         self.name = name
+        self.rank = - 1
 
         self.child = []
         self.cylstart = np.array(cylpos)    # parent related coordinates r, phi
@@ -76,6 +76,10 @@ class Body:
             body = body.parent
             hierarchy.insert(0, body)
         return hierarchy
+
+    def getInfo(self):
+        return ["Name: " + self.name,
+                str(self.mappos)]
 
     def Move(self, dt):
         self.cylpos = self.cylpos + dt * self.cylvel
@@ -144,6 +148,9 @@ class Star(Body):
                 self.child[n].Create()
                 n += 1
             i += 1
+
+    def getMajorBodies(self):
+        return [self] + self.child
 
     def Collapse(self, full=True):
         hole = BlackHole(self.parent, self.root, self.mass, self.cylpos, self.name)
@@ -225,7 +232,8 @@ class Planet(Body):
 
         self.structure = None
 
-        self.mass = 0         # in earth mass
+        self.massE = 0         # in earth mass
+        self.mass = 0
         self.scorbit = [0, 0]  # Hills-Radius in AU
         self.radius = 0       # in earth radii
         self.torbit = 0
@@ -233,14 +241,15 @@ class Planet(Body):
         self.image = None
 
     def Create(self):
-        self.mass = min(300, 0.5 + np.random.exponential(self.cylpos[R]))
-        self.radius = Astro.PlanetRadius(self.mass)
+        self.massE = min(300, 0.5 + np.random.exponential(self.cylpos[R]))
+        self.mass = Astro.Me_Msol * self.massE
+        self.radius = Astro.PlanetRadius(self.massE)
 
         # setup circular orbit
         self.torbit = 365 * np.sqrt(self.cylpos[R]**3 / self.parent.mass)
         self.cylvel = np.array([0, 2 * np.pi / self.torbit])
 
-        self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R], self.mass * Astro.Me_Msol, self.parent.mass)
+        self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R], self.mass, self.parent.mass)
         self.scorbit[MIN] = 0
 
         self.color = pg.Color("brown")
@@ -290,18 +299,21 @@ class Moon(Body):
     def __init__(self, parent, root, cylpos=[0, 0], name="unknown"):
         Body.__init__(self, parent, root, cylpos, name)
 
-        self.mass = 0         # in earth mass
+        self.massE = 0         # in earth mass
+        self.mass = 0         # in solar mass
         self.radius = 0       # in earth radii
         self.torbit = 0
         self.image = None
 
     def Create(self):
-        self.mass = np.random.uniform(0.01, 0.1) * self.parent.mass
-        self.radius = Astro.PlanetRadius(self.mass)
+        self.massE = np.random.uniform(0.01, 0.1) * self.parent.massE
+        self.mass = Astro.Me_Msol * self.massE
+
+        self.radius = Astro.PlanetRadius(self.massE)
 
         # setup circular orbit
         # orbital period in days from parent mass
-        self.torbit = 365 * np.sqrt(self.cylpos[R]**3 / (Astro.Me_Msol * self.parent.mass))
+        self.torbit = 365 * np.sqrt(self.cylpos[R]**3 / (self.parent.mass))
         self.cylvel = np.array([0, 2 * np.pi / self.torbit])
 
         self.image = Body.MOONIMAGE.convert_alpha()

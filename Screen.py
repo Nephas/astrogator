@@ -1,5 +1,7 @@
 """Author: Marco Fink"""
 
+import datetime as dt
+
 import numpy as np
 import pygame as pg
 
@@ -62,12 +64,12 @@ class Screen:
         pg.draw.line(self.gui, linecolor, (Screen.SIZE[X] / 2, 0), (Screen.SIZE[X] / 2, Screen.SIZE[Y]))
         pg.draw.line(self.gui, linecolor, (0, Screen.SIZE[Y] / 2), (Screen.SIZE[X], Screen.SIZE[Y] / 2))
 
-        info = ["Time-step: " + str(self.main.stepsize * self.main.TPS) + " days/s",
-                "Time: " + str(self.main.world.time) + " days",
-                "Mapscale: " + str(self.mapscale),
-                "Planetscale: " + str(self.planetscale),
-                self.refbody.name,
-                str(self.refbody.mass)]
+        date = dt.date(3000, 1, 1) + dt.timedelta(days=self.main.world.time)
+
+        info = ["Time-step:   " + str(self.main.stepsize * self.main.TPS) + " days/s",
+                "Time:        " + date.isoformat(),
+                "Mapscale:    " + str(round(self.mapscale, 5)) + " px/AU",
+                "Planetscale: " + str(round(self.planetscale, 5))]
 
         for i, line in enumerate(info):
             self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 10))
@@ -75,11 +77,20 @@ class Screen:
         bodyinfo = []
 
         for i, body in enumerate(self.main.screen.refbody.getHierarchy()):
-            bodyinfo.append(i * ' ' + body.name)
+            bodyinfo.append(i * '  ' + '* ' + body.__class__.__name__ + ': ' + body.name)
 
         for i, line in enumerate(bodyinfo):
-            self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 100))
+            self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 160))
 
+        self.MouseArrow()
+
+    def MouseArrow(self):
+        pos = np.array(pg.mouse.get_pos())
+        acc = self.main.world.activesystem.Acc(self.Screen2Map(pos))
+        acc = 1000000 * np.log(acc + np.array([1, 1]))
+        endpos = pos + acc
+        if self.Contains(endpos) and self.Contains(pos):
+            pg.draw.lines(self.gui, pg.Color("white"), False, [pos, endpos])
 
     # Coordinate transformation from mapspace to screenspace
     def Map2Screen(self, mappos, time=0):
