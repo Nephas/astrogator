@@ -253,11 +253,9 @@ class RootSystem(System):
             self.CreatePlanets()
 
         self.major = map(lambda b: (b, b.mass), self.getMajorBodies())
-        ship = MinorBody(self, [0, 2.0],[-Astro.vOrbit(2.0,self.mass), 0])
-        self.minor.append(ship)
 
     def getClosest(self, mappos):
-        refbodies = [body.getClosest(mappos) for body in self.comp + self.child] + self.child + self.minor
+        refbodies = [body.getClosest(mappos) for body in self.comp + self.child] + self.child + self.minor + [self]
         dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
         return refbodies[np.argmin(dists)]
 
@@ -269,7 +267,7 @@ class RootSystem(System):
         else:
             return self.mappos
 
-    def Acc(self, mappos, time=0):
+    def nbodyAcc(self, mappos):
         mass = np.array(map(lambda mb: mb[1], self.major))
 
         pos = np.ndarray((len(self.major), 2))

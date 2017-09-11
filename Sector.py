@@ -8,6 +8,7 @@ import pygame as pg
 from Astro import Astro
 from Screen import Screen
 from System import RootSystem
+from Minor import Ship
 
 R = 0
 PHI = 1
@@ -55,8 +56,13 @@ class Sector:
 
         self.refsystem = rd.choice(self.system)
         self.activesystem = self.refsystem.Unpack()
+
+        ship = Ship(self.activesystem, [0, 2.0],[-Astro.vOrbit(2.0, 1), 0])
+        self.activesystem.minor.append(ship)
+
         self.main.screen.refbody = self.activesystem
         self.main.screen.refsystem = self.refsystem
+        self.main.screen.playership = ship
 
     def Draw(self, screen):
         if screen.mapscale < Screen.SYSTEMTHRESHOLD:

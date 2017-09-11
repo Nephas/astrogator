@@ -5,6 +5,8 @@ import datetime as dt
 import numpy as np
 import pygame as pg
 
+from Astro import Astro
+
 R = 0
 PHI = 1
 X = 0
@@ -43,6 +45,7 @@ class Screen:
 
         self.refbody = None
         self.refsystem = None
+        self.playership = None
 
     def RenderAll(self, gui=False):
         self.display.blit(self.back, (0, 0))
@@ -69,7 +72,9 @@ class Screen:
         info = ["Time-step:   " + str(self.main.stepsize * self.main.TPS) + " days/s",
                 "Time:        " + date.isoformat(),
                 "Mapscale:    " + str(round(self.mapscale, 5)) + " px/AU",
-                "Planetscale: " + str(round(self.planetscale, 5))]
+                "Planetscale: " + str(round(self.planetscale, 5)),
+                " ",
+                "Velocity:    " + str(round(Astro.AU_kms*np.linalg.norm(self.playership.mapvel),3)) + " km/s"]
 
         for i, line in enumerate(info):
             self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 10))

@@ -19,6 +19,7 @@ class Astro:
     rho = 1000        # kg m^-3
     Mearth = 6e24   # kg
     Rearth = 6370000   # m
+    AU_kms = 1736.1 # 150000000/(365.25*86400)
 
     def __init__(self):
         pass

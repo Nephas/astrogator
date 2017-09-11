@@ -56,6 +56,11 @@ class Body:
         else:
             return Screen.Pol2Cart(self.cylstart + time * self.cylvel) + self.parent.MapPos(time)
 
+    def Acc(self, pos, time):
+        diff = pos - self.MapPos(time)
+        acc = - Astro.G * np.power(np.linalg.norm(diff), -3) * self.mass * diff
+        return acc
+
     def drawTrail(self, screen, orbfrac):
         self.color.a = 128
         length = min(self.root.main.screen.refbody.torbit * orbfrac, self.torbit * orbfrac)
