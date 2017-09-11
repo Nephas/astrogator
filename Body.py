@@ -116,7 +116,6 @@ class Star(Body):
         self.image = Screen.colorSurface(self.image.copy(), self.color)
 
         self.CreatePlanets()
-        self.EmitParticle(10)
 
     def CreatePlanets(self, innerRadius=0.1):
         self.scorbit[MIN] = innerRadius
@@ -140,10 +139,6 @@ class Star(Body):
                 n += 1
             i += 1
 
-    def EmitParticle(self, n=10):
-        for i in range(n):
-            self.particle.append(Wave(self, self.root, [rd.random() * self.scorbit[MAX], 0]))
-
     def Collapse(self, full=True):
         hole = BlackHole(self.parent, self.root, self.mass, self.cylpos, self.name)
         hole.Create(full)
@@ -160,8 +155,6 @@ class Star(Body):
 
         if screen.mapscale < Screen.PLANETTHRESHOLD:
             self.drawTrail(screen, 0.3)
-            for particle in self.particle:
-                particle.Draw(screen)
 
         # star image
         if Screen.Contains(screen.Map2Screen(self.mappos, self.root.time)):
@@ -244,10 +237,6 @@ class Planet(Body):
         self.scorbit[MIN] = 0
 
         self.color = pg.Color("brown")
-
-        if rd.random() < 0.5:
-            self.structure = Ring(self, self.root, self.scorbit)
-            self.structure.Create()
 
         # create moons
         i = 0

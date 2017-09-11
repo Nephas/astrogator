@@ -3,6 +3,8 @@
 import numpy as np
 import pygame as pg
 
+from Gui import Window
+
 R = 0
 PHI = 1
 X = 0
@@ -32,6 +34,9 @@ class Screen:
                     'BODY': pg.Surface(Screen.SIZE, flags=pg.SRCALPHA)}
 
         self.gui = pg.Surface(Screen.SIZE, flags=pg.SRCALPHA)
+        self.windows = {'Info': Window(self, size=(300,300), title = "Info", screenpos=(10,10)),
+                        'Messages': Window(self, size=(300,300), title = "Messages", screenpos=(400,400))}
+
         self.font = pg.font.SysFont("Arial", 12)
 
         self.offset = 0.5 * Screen.SIZE
@@ -57,20 +62,22 @@ class Screen:
 
     def RenderGui(self):
         self.gui.fill(pg.Color(0, 0, 0, 0))
-        linecolor = pg.Color(255, 255, 255, 64)
+        
+        pg.draw.line(self.gui, pg.Color(255, 255, 255, 64), (Screen.SIZE[X] / 2, 0), (Screen.SIZE[X] / 2, Screen.SIZE[Y]))
+        pg.draw.line(self.gui, pg.Color(255, 255, 255, 64), (0, Screen.SIZE[Y] / 2), (Screen.SIZE[X], Screen.SIZE[Y] / 2))
 
-        pg.draw.line(self.gui, linecolor, (Screen.SIZE[X] / 2, 0), (Screen.SIZE[X] / 2, Screen.SIZE[Y]))
-        pg.draw.line(self.gui, linecolor, (0, Screen.SIZE[Y] / 2), (Screen.SIZE[X], Screen.SIZE[Y] / 2))
+#         info = ["Time-step: " + str(self.main.stepsize) + " days/tick",
+#                 "Time: " + str(self.main.world.time) + " days",
+#                 "Mapscale: " + str(self.mapscale),
+#                 "Planetscale: " + str(self.planetscale),
+#                 self.refbody.name,
+#                 str(self.refbody.mass)]
+#
+#        for i, line in enumerate(info):
+#            self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 10))
 
-        info = ["Time-step: " + str(self.main.stepsize) + " days/tick",
-                "Time: " + str(self.main.world.time) + " days",
-                "Mapscale: " + str(self.mapscale),
-                "Planetscale: " + str(self.planetscale),
-                self.refbody.name,
-                str(self.refbody.mass)]
-
-        for i, line in enumerate(info):
-            self.gui.blit(self.font.render(line, 1, pg.Color("white")), (10, i * 20 + 10))
+        for title in self.windows:
+            self.gui.blit(self.windows[title].surf, self.windows[title].screenpos)
 
     # Coordinate transformation from mapspace to screenspace
     def Map2Screen(self, mappos, time=0):
