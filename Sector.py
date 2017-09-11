@@ -8,6 +8,7 @@ import pygame as pg
 from Astro import Astro
 from Screen import Screen
 from System import RootSystem
+from Minor import Ship
 
 R = 0
 PHI = 1
@@ -24,7 +25,7 @@ class Sector:
 
     STARIMAGE = pg.image.load("graphics/star.png")
 
-    def __init__(self, main, size=[20, 20], density=0.5):
+    def __init__(self, main, size=[10, 10], density=0.5):
         self.main = main
         self.time = 0
         self.system = []
@@ -51,17 +52,27 @@ class Sector:
             if i % 100 == 0:
                 print("  " + str(i) + "/" + str(numStars))
 
+        self.system = sorted(list(set(self.system)), key=lambda sys: -sys.mag)
+
         self.refsystem = rd.choice(self.system)
         self.activesystem = self.refsystem.Unpack()
+
+        ship = Ship(self.activesystem, [0, 2.0],[-Astro.vOrbit(2.0, 1), 0])
+        self.activesystem.minor.append(ship)
+
         self.main.screen.refbody = self.activesystem
         self.main.screen.refsystem = self.refsystem
+        self.main.screen.playership = ship
 
     def Draw(self, screen):
         if screen.mapscale < Screen.SYSTEMTHRESHOLD:
             for system in self.system:
                 system.Draw(screen)
         else:
-            self.activesystem.Draw(screen)
+            for body in self.main.screen.refbody.getHierarchy():
+                body.Draw(screen)
+        for body in self.activesystem.minor:
+            body.Draw(screen)
 
     def Move(self, dt):
         self.time += dt

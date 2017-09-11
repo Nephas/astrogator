@@ -13,8 +13,8 @@ from Sector import Sector
 class Main:
     """Main game class"""
 
-    TPS = 30
-    FPS = 15
+    TPS = 25
+    FPS = 25
 
     def __init__(self):
         """Main game class"""
@@ -25,6 +25,7 @@ class Main:
         pg.PAUSE = 29
 
         pg.init()
+        self.steplimit = 1000
         self.stepsize = 0.1             # stepsize in days/timestep, max
         self.screen = Screen(self)      # Main display Surface
         self.input = Input(self)
@@ -45,7 +46,7 @@ class Main:
 
         pg.time.set_timer(pg.GAMETIC, 1000 / Main.TPS)
         pg.time.set_timer(pg.RENDER, 1000 / Main.FPS)
-        pg.time.set_timer(pg.GUIRENDER, 500)
+        pg.time.set_timer(pg.GUIRENDER, 50)
 
         while True:
             if self.debug:

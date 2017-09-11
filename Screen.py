@@ -1,9 +1,14 @@
 """Author: Marco Fink"""
 
+import datetime as dt
+
 import numpy as np
 import pygame as pg
 
+
 from Gui import Window
+from Astro import Astro
+
 
 R = 0
 PHI = 1
@@ -46,6 +51,7 @@ class Screen:
 
         self.refbody = None
         self.refsystem = None
+        self.playership = None
 
     def RenderAll(self, gui=False):
         self.display.blit(self.back, (0, 0))
@@ -74,6 +80,14 @@ class Screen:
 
         for title in self.windows:
             self.windows[title].Render(self.gui)
+
+    def MouseArrow(self):
+        pos = np.array(pg.mouse.get_pos())
+        acc = self.main.world.activesystem.Acc(self.Screen2Map(pos))
+        acc = 1000000 * np.log(acc + np.array([1, 1]))
+        endpos = pos + acc
+        if self.Contains(endpos) and self.Contains(pos):
+            pg.draw.lines(self.gui, pg.Color("white"), False, [pos, endpos])
 
     # Coordinate transformation from mapspace to screenspace
     def Map2Screen(self, mappos, time=0):
