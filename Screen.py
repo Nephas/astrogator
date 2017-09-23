@@ -39,8 +39,8 @@ class Screen:
                     'BODY': pg.Surface(Screen.SIZE, flags=pg.SRCALPHA)}
 
         self.gui = pg.Surface(Screen.SIZE, flags=pg.SRCALPHA)
-        self.windows = {'Info': Window(self, size=(200,300), title = "Info", screenpos=(10,10)),
-                        'Messages': Window(self, size=(200,30), title = "Messages", screenpos=(10,600))}
+        self.windows = {'Info': Window(self, size=(200, 300), title="Info", screenpos=(10, 10)),
+                        'Messages': Window(self, size=(200, 30), title="Messages", screenpos=(10, 600))}
 
         self.font = pg.font.SysFont("Arial", 12)
 
@@ -69,26 +69,24 @@ class Screen:
     def RenderGui(self):
         self.gui.fill(pg.Color(0, 0, 0, 0))
 
-        pg.draw.line(self.gui, pg.Color(255, 255, 255, 64), (Screen.SIZE[X] / 2, 0), (Screen.SIZE[X] / 2, Screen.SIZE[Y]))
-        pg.draw.line(self.gui, pg.Color(255, 255, 255, 64), (0, Screen.SIZE[Y] / 2), (Screen.SIZE[X], Screen.SIZE[Y] / 2))
+        pg.draw.line(self.gui, pg.Color(255, 255, 255, 64),
+                     (Screen.SIZE[X] / 2, 0), (Screen.SIZE[X] / 2, Screen.SIZE[Y]))
+        pg.draw.line(self.gui, pg.Color(255, 255, 255, 64), (0,
+                                                             Screen.SIZE[Y] / 2), (Screen.SIZE[X], Screen.SIZE[Y] / 2))
 
         self.windows['Info'].content = ["Time-step: {:.2f} days/tick".format(self.main.stepsize),
-                                        "Time: {:.2f} days".format(self.main.world.time),
-                                        "Mapscale: {:.2f} AU/px".format(self.mapscale),
+                                        "Time: {:.2f} days".format(
+                                            self.main.world.time),
+                                        "Mapscale: {:.2f} AU/px".format(
+                                            self.mapscale),
                                         "Focus: " + self.refbody.name,
-                                        "Mass: {:.2f} M*".format(self.refbody.mass),
-                                        "Velocity: {:.2f} km/s".format(Astro.AU_kms*np.linalg.norm(self.playership.mapvel))]
+                                        "Mass: {:.2f} M*".format(
+                                            self.refbody.mass),
+                                        "Velocity: {:.2f} km/s".format(Astro.AU_kms *
+                                                                       np.linalg.norm(self.playership.mapvel))]
 
         for title in self.windows:
             self.windows[title].Render(self.gui)
-
-    def MouseArrow(self):
-        pos = np.array(pg.mouse.get_pos())
-        acc = self.main.world.activesystem.Acc(self.Screen2Map(pos))
-        acc = 1000000 * np.log(acc + np.array([1, 1]))
-        endpos = pos + acc
-        if self.Contains(endpos) and self.Contains(pos):
-            pg.draw.lines(self.gui, pg.Color("white"), False, [pos, endpos])
 
     # Coordinate transformation from mapspace to screenspace
     def Map2Screen(self, mappos, time=0):
@@ -97,7 +95,8 @@ class Screen:
         else:
             ref = self.refsystem
 
-        screenpos = Screen.SIZE / 2. + self.mapscale * (mappos - ref.MapPos(time))
+        screenpos = Screen.SIZE / 2. + \
+            self.mapscale * (mappos - ref.MapPos(time))
         return screenpos.astype(int)
 
     # Coordinate transformation from mapspace to screenspace
@@ -107,7 +106,8 @@ class Screen:
         else:
             ref = self.refsystem
 
-        mappos = (screenpos - Screen.SIZE / 2.) / self.mapscale + ref.MapPos(time)
+        mappos = (screenpos - Screen.SIZE / 2.) / \
+            self.mapscale + ref.MapPos(time)
         return mappos
 
     def Zoom(self, closer=True):

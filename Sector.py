@@ -30,7 +30,9 @@ class Sector:
         self.time = 0
         self.system = []
         self.activesystem = None
+        self.viewsystem = None
         self.refsystem = None
+        self.playership = None
         self.density = density      # in stars / pc^2
         self.size = size            # in pc
 
@@ -45,7 +47,7 @@ class Sector:
                 np.array([np.random.normal() * self.size[X],
                           np.random.normal() * self.size[Y]])
             mass = min(100, 0.5 + np.random.exponential(2))
-            system = RootSystem(self.main, mass=mass, mappos=pos)
+            system = RootSystem(self.main, mass=mass, worldpos=pos)
             pack = system.Generate(rd.randint(0, 2**16), 0)
             self.system.append(pack)
 
@@ -56,8 +58,10 @@ class Sector:
 
         self.refsystem = rd.choice(self.system)
         self.activesystem = self.refsystem.Unpack()
+        self.viewsystem = self.activesystem
 
-        ship = Ship(self.activesystem, [0, 2.0],[-Astro.vOrbit(2.0, 1), 0])
+        ship = Ship(self, self.activesystem, [
+                    0, 2.0], [-Astro.vOrbit(2.0, 1), 0])
         self.activesystem.minor.append(ship)
 
         self.main.screen.refbody = self.activesystem
@@ -69,21 +73,27 @@ class Sector:
         if screen.mapscale < Screen.SYSTEMTHRESHOLD:
             for system in self.system:
                 system.Draw(screen)
-            self.playership.Draw(screen, True)
-        else:
-            for body in self.main.screen.refbody.getHierarchy():
-                body.Draw(screen)
             self.playership.Draw(screen)
-#            for body in self.activesystem.minor:
+        else:
+            #            for body in self.main.screen.refbody.getHierarchy():
+            #                body.Draw(screen)
+            self.viewsystem.Draw(screen)
+            for body in self.viewsystem.minor:
+                body.Draw(screen)
+#        if self.viewsystem is self.activesystem:
+#            self.playership.Draw(screen)
+#            for body in self.viewsystem.minor:
 #                body.Draw(screen)
 
     def potential(self, mappos):
-        return np.array([0.0,0.0])
+        return np.array([0.0, 0.0])
 
     def Move(self, dt):
         self.time += dt
         if self.activesystem is not None:
             self.activesystem.Move(dt)
+        if self.viewsystem is not None and self.viewsystem.name is not self.activesystem.name:
+            self.viewsystem.Move(dt)
         for system in self.system:
             system.Move()
 
@@ -98,20 +108,25 @@ class Sector:
 
     def getClosest(self, mappos):
         """Return the closest system if in sector view, or the closest body when in system view"""
-        if self.main.screen.mapscale < Screen.SYSTEMTHRESHOLD or self.activesystem is None:
-            dists = [np.linalg.norm((mappos - system.mappos))
+        if self.main.screen.mapscale < Screen.SYSTEMTHRESHOLD or self.viewsystem is None:
+            dists = [np.linalg.norm((mappos - system.worldpos))
                      for system in self.system]
             i = np.argmin(dists)
             return self.system[i]
         else:
-            return self.activesystem.getClosest(mappos)
+            return self.viewsystem.getClosest(mappos)
 
     def changeFocus(self, body):
         """To another system, unpacking it on the way, or to a body inside the activesystem"""
-        if hasattr(body, 'root') and body.root is self.activesystem:
+        if hasattr(body, 'root') and body.root is self.viewsystem:
             self.main.screen.refbody = body
-        elif body is not self.activesystem:
+        elif body.name != self.activesystem.name:
             self.refsystem = body
-            self.activesystem = body.Unpack()
-            self.main.screen.refbody = self.activesystem
-            self.main.screen.refsystem = self.refsystem
+            self.viewsystem = body.Unpack()
+            self.main.screen.refbody = self.viewsystem
+        elif body.name == self.activesystem.name:
+            self.refsystem = body
+            self.viewsystem = self.activesystem
+            self.main.screen.refbody = self.viewsystem
+
+        self.main.screen.refsystem = self.refsystem

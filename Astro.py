@@ -19,7 +19,7 @@ class Astro:
     rho = 1000        # kg m^-3
     Mearth = 6e24   # kg
     Rearth = 6370000   # m
-    AU_kms = 1736.1 # 150000000/(365.25*86400)
+    AU_kms = 1736.1  # 150000000/(365.25*86400)
 
     def __init__(self):
         pass
@@ -99,4 +99,4 @@ class Astro:
     @staticmethod
     def vOrbit(r, M):  # in AU/day
         tOrb = 365 * np.sqrt(r**3 / M)
-        return 2*np.pi*r/tOrb
+        return 2 * np.pi * r / tOrb

@@ -1,14 +1,12 @@
 """Author: Marco Fink"""
 
 import random as rd
-import time as t
 
 import numpy as np
 import pygame as pg
 
 from Astro import Astro
 from Body import Planet, Star
-from Minor import MinorBody
 from Screen import Screen
 
 R = 0
@@ -27,24 +25,24 @@ class PackedSystem:
     def __init__(self, pack, seed):
         self.seed = seed
 
-        self.mappos = np.array([0, 0])
-        self.mapstart = pack.mappos
-        self.mapvel = 0.1*np.array([np.random.normal(), np.random.normal()])
+        self.worldpos = pack.worldpos
+        self.mapstart = pack.worldpos
+        self.mapvel = 0. * np.array([np.random.normal(), np.random.normal()])
 
         self.main = pack.main
         self.name = pack.name
         self.mass = pack.mass
         self.binary = pack.binary
         self.color = pack.color
-        self.image = pg.transform.scale(System.STARIMAGE.convert_alpha(), (32, 32))
+        self.image = pg.transform.scale(
+            System.STARIMAGE.convert_alpha(), (32, 32))
         self.image = Screen.colorSurface(self.image, pack.color)
         self.luminosity = pack.luminosity
         self.mag = -2.5 * np.log10(max(0.01, pack.luminosity)) - 25
 
     def Unpack(self):
         """Unpack the system, returning a full scale System() object"""
-        system = RootSystem(self.main, mass=self.mass, mappos=self.mappos)
-        system.pack = self
+        system = RootSystem(self.main, mass=self.mass, worldpos=self.worldpos)
         rd.seed(self.seed)
         np.random.seed(self.seed)
 
@@ -72,21 +70,22 @@ class PackedSystem:
     def drawTrail(self, screen):
         length = 36500
         self.color.a = 32
-        times = np.linspace(self.main.world.time - length, self.main.world.time, 5)
+        times = np.linspace(self.main.world.time - length,
+                            self.main.world.time, 5)
         mappos = screen.Map2Screen(self.MapPos(times), times)
         pg.draw.lines(screen.map['TRAIL'], self.color, False, mappos)
         self.color.a = 255
 
     def Draw(self, screen):
-        if Screen.Contains(screen.Map2Screen(self.mappos, self.main.world.time)):
+        if Screen.Contains(screen.Map2Screen(self.worldpos, self.main.world.time)):
             image = pg.transform.rotozoom(
                 self.image, 0, - 10 * screen.starscale * self.mag)
             screen.map['BODY'].blit(image, screen.Map2Screen(
-                self.mappos, self.main.world.time) - np.array(image.get_size()) * 0.5)
+                self.worldpos, self.main.world.time) - np.array(image.get_size()) * 0.5)
             self.drawTrail(screen)
 
     def Move(self, dt=0):
-        self.mappos = self.MapPos(self.main.world.time)
+        self.worldpos = self.MapPos(self.main.world.time)
 
 
 class System:
@@ -105,7 +104,8 @@ class System:
         self.cylstart = np.array(cylpos)    # parent related coordinates r, phi
         self.cylpos = np.array(cylpos)      # running polar position
         self.cylvel = np.array([0, 0])       # now in rad/day
-        self.mappos = np.array([0, 0])      # absolute cartesian position now in AU
+        # absolute cartesian position now in AU
+        self.mappos = np.array([0, 0])
 
         self.mass = mass             # total system mass
         self.luminosity = 0
@@ -121,12 +121,14 @@ class System:
     def CreateComps(self, massA, massB):
         phirand = rd.random() * 2 * np.pi
         if rd.random() < 0.5 or self.rank >= System.RECURSION_DEPTH - 1:
-            self.comp.append(Star(self, self.root, massA, [self.orbit[A], phirand], self.name + " A"))
+            self.comp.append(Star(self, self.root, massA, [
+                             self.orbit[A], phirand], self.name + " A"))
         else:
             self.comp.append(SubSystem(self, self.root, massA, self.name +
                                        " A", [self.orbit[A], phirand], self.rank + 1))
         if rd.random() < 0.5 or self.rank >= System.RECURSION_DEPTH - 1:
-            self.comp.append(Star(self, self.root, massB, [self.orbit[B], phirand + np.pi], self.name + " B"))
+            self.comp.append(Star(self, self.root, massB, [
+                             self.orbit[B], phirand + np.pi], self.name + " B"))
         else:
             self.comp.append(SubSystem(self, self.root, massB, self.name + " B",
                                        [self.orbit[B], phirand + np.pi], self.rank + 1))
@@ -154,7 +156,8 @@ class System:
         return hierarchy
 
     def getClosest(self, mappos):
-        refbodies = [body.getClosest(mappos) for body in self.comp + self.child] + self.child + [self]
+        refbodies = [body.getClosest(
+            mappos) for body in self.comp + self.child] + self.child + [self]
         dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
         return refbodies[np.argmin(dists)]
 
@@ -188,7 +191,7 @@ class System:
     def Move(self, dt=0):
         oldpos = self.mappos
         self.mappos = self.MapPos(self.root.time)
-        self.mapvel = (self.mappos - oldpos)/dt
+        self.mapvel = (self.mappos - oldpos) / dt
 
         for comp in self.comp:
             comp.Move(dt)
@@ -199,14 +202,15 @@ class System:
 class RootSystem(System):
     """The root class for a hierarchical multiple system"""
 
-    def __init__(self, main, mass=0, name="unknown", mappos=[0, 0], binary=False):
+    def __init__(self, main, mass=0, name="unknown", worldpos=[0, 0], binary=False):
         System.__init__(self, mass, name, cylpos=[0, 0], rank=0)
         self.main = main
         self.root = self
-        self.pack = None
         self.time = main.world.time
-        self.mappos = mappos
-        self.mapvel = np.array([0.,0.])
+        self.worldpos = np.array(worldpos)
+
+        self.mappos = np.array([0., 0.])
+        self.mapvel = np.array([0., 0.])
 
         self.major = []  # a list of major bodies and their solar masses
         self.minor = []  # a list of minor bodies in the n-body potential
@@ -260,7 +264,8 @@ class RootSystem(System):
         self.major = map(lambda b: (b, b.mass), self.getMajorBodies())
 
     def getClosest(self, mappos):
-        refbodies = [body.getClosest(mappos) for body in self.comp + self.child] + self.child + self.minor + [self]
+        refbodies = [body.getClosest(
+            mappos) for body in self.comp + self.child] + self.child + self.minor + [self]
         dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
         return refbodies[np.argmin(dists)]
 
@@ -296,6 +301,7 @@ class RootSystem(System):
         for body in self.minor:
             body.Move(dt)
 
+
 class SubSystem(System):
     """All other binaries in a hierarchical multiple system"""
 
@@ -308,12 +314,14 @@ class SubSystem(System):
         massA = rd.uniform(0.5, 0.9) * self.mass
         massB = self.mass - massA
 
-        self.scorbit[MAX] = Astro.HillSphere(self.cylpos[R], self.mass, self.parent.mass)
+        self.scorbit[MAX] = Astro.HillSphere(
+            self.cylpos[R], self.mass, self.parent.mass)
         self.orbit[B] = rd.uniform(0.2, 0.8) * self.scorbit[MAX]
         self.orbit[A] = self.orbit[B] * massB / massA
 
         distance = sum(self.parent.orbit)
-        self.torbit = 365 * np.sqrt(distance**3 / self.parent.mass)  # orbital period in years from parent mass
+        # orbital period in years from parent mass
+        self.torbit = 365 * np.sqrt(distance**3 / self.parent.mass)
         self.cylvel = np.array([0, 2 * np.pi / (self.torbit)])
 
         self.CreateComps(massA, massB)

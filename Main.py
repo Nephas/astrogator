@@ -66,7 +66,8 @@ class Main:
                     self.debug = True
                 elif event.type == pg.PAUSE:
                     self.running = not self.running
-                    pg.time.set_timer(pg.GAMETIC, 1000 / Main.TPS * int(self.running))
+                    pg.time.set_timer(pg.GAMETIC, 1000 /
+                                      Main.TPS * int(self.running))
 
                 elif event.type == pg.GAMETIC:
                     self.world.Move(self.stepsize)
@@ -80,6 +81,7 @@ class Main:
                     self.input.HandleKey(pg.key.name(event.key))
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     self.input.HandleMouse(event.button, event.pos)
+
 
 main = Main()
 main.Generate()
