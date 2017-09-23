@@ -35,8 +35,9 @@ class Body:
         self.child = []
         self.cylstart = np.array(cylpos)    # parent related coordinates r, phi
         self.cylpos = np.array(cylpos)      # running polar position
-        self.cylvel = np.array([0, 0])      # now in rad/day
-        self.mappos = np.array([0, 0])      # absolute cartesian position now in AU
+        self.cylvel = np.array([0., 0.])      # now in rad/day
+        self.mappos = np.array([0., 0.])      # absolute cartesian position now in AU
+        self.mapvel = np.array([0., 0.])
 
         self.color = pg.Color("white")
 
@@ -69,6 +70,11 @@ class Body:
         pg.draw.lines(screen.map['TRAIL'], self.color, False, mappos)
         self.color.a = 255
 
+    def drawVelocity(self, screen):
+        arrow = (self.mapvel-screen.refbody.mapvel)*Astro.AU_kms
+        pos = screen.Map2Screen(self.mappos, self.root.time)
+        pg.draw.lines(screen.map['TRAIL'], pg.Color("darkgreen"), False, [pos,pos+arrow])
+
     def getClosest(self, mappos):
         refbodies = [body.getClosest(mappos) for body in self.child] + self.child + [self]
         dists = [np.linalg.norm((mappos - body.mappos)) for body in refbodies]
@@ -89,6 +95,7 @@ class Body:
     def Move(self, dt):
         self.cylpos = self.cylpos + dt * self.cylvel
         self.mappos = self.MapPos(self.root.time)
+        self.mapvel = (self.MapPos(self.root.time + dt) - self.mappos)/dt
 
         for child in self.child:
             child.Move(dt)
@@ -291,6 +298,7 @@ class Planet(Body):
                     moon.Draw(screen)
 
         self.drawTrail(screen, 0.25)
+        self.drawVelocity(screen)
 
         image = pg.transform.rotozoom(
             self.image, -self.cylpos[PHI] / (2 * np.pi) * 360, screen.planetscale * self.radius)

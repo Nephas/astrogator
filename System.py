@@ -185,7 +185,9 @@ class System:
             self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
 
     def Move(self, dt=0):
+        oldpos = self.mappos
         self.mappos = self.MapPos(self.root.time)
+        self.mapvel = (self.mappos - oldpos)/dt
 
         for comp in self.comp:
             comp.Move(dt)
@@ -202,6 +204,7 @@ class RootSystem(System):
         self.root = self
         self.time = main.world.time
         self.mappos = mappos
+        self.mapvel = np.array([0.,0.])
 
         self.major = []  # a list of major bodies and their solar masses
         self.minor = []  # a list of minor bodies in the n-body potential

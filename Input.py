@@ -5,6 +5,14 @@ import random as rd
 import numpy as np
 import pygame as pg
 
+R = 0
+PHI = 1
+X = 0
+Y = 1
+A = 0
+B = 1
+MIN = 0
+MAX = 1
 
 class Input:
     """General Mouse and Keyboard input handler"""
@@ -40,14 +48,18 @@ class Input:
             i = self.main.world.system.index(self.main.screen.refsystem)
             self.main.world.changeFocus(self.main.world.system[i - 1])
 
-        # elif keyname == "right":
-        #     self.main.world.ship[0].orientation += 0.2
-        # elif keyname == "left":
-        #     self.main.world.ship[0].orientation -= 0.2
-        # elif keyname == "down":
-        #     self.main.world.ship[0].mapvel += 0.001*self.main.world.ship[0].pointing
-        # elif keyname == "up":
-        #     self.main.world.ship[0].mapvel -= 0.001*self.main.world.ship[0].pointing
+        elif keyname == "right":
+            self.main.screen.playership.pointing[PHI] += 0.1
+        elif keyname == "left":
+            self.main.screen.playership.pointing[PHI] -= 0.1
+        elif keyname == "down":
+            self.main.screen.playership.thrust -= 0.001
+        elif keyname == "up":
+            self.main.screen.playership.thrust += 0.001
+        elif keyname == "#":
+            self.main.screen.playership.thrust = 0.0
+        elif keyname == "c":
+            self.main.screen.playership.circularize(self.main.screen.refbody)
 
     def HandleMouse(self, button, pos):
         """Mouse Handling"""

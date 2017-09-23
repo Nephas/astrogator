@@ -25,6 +25,8 @@ class Main:
         pg.PAUSE = 29
 
         pg.init()
+        pg.mixer.music.load('music/271866__mrpork__era-of-space.ogg')
+
         self.steplimit = 1000
         self.stepsize = 0.1             # stepsize in days/timestep, max
         self.screen = Screen(self)      # Main display Surface
@@ -41,6 +43,8 @@ class Main:
     def Run(self):
         """Start the main game loop"""
         pg.event.clear()
+        pg.mixer.music.play(loops=-1)
+
         self.debug = False
         self.running = True
 
@@ -76,7 +80,6 @@ class Main:
                     self.input.HandleKey(pg.key.name(event.key))
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     self.input.HandleMouse(event.button, event.pos)
-
 
 main = Main()
 main.Generate()
