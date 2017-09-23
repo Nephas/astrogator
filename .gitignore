@@ -1,5 +1,7 @@
 *.pyc
 *.odt
+music/
+graphics/
 science/
 sounds/
 *.xcf

@@ -53,7 +53,7 @@ class MinorBody:
         velComp = self.mapvel + dt*self.mapacc
 
         self.mappos += dt*velInter
-        self.mapvel = velInter + dt/2.*self.root.nbodyAcc(self.mappos)
+        self.mapvel = velInter + dt/2.*self.root.potential(self.mappos)
 
         error = np.sum(np.abs(velComp-self.mapvel))/np.sum(np.abs(velComp))
         tol = 0.05
@@ -70,12 +70,22 @@ class Ship(MinorBody):
         self.acc = np.array([0.,0.])
         self.thrust = 0.0
 
-    def Draw(self, screen):
-        image = pg.transform.rotozoom(self.image, 0, 0.1)
-        screen.map['BODY'].blit(image, screen.Map2Screen(
-            self.mappos, self.root.time) - np.array(image.get_size()) * 0.5)
+        self.trail = np.array([(0.,0.,0.) for i in range(1024)])
+        self.trailpointer = 0
 
-        pos = screen.Map2Screen(self.mappos, self.root.time)
+    def Draw(self, screen, sector=False):
+        image = pg.transform.rotozoom(self.image, 0, 0.1)
+
+        if not sector:
+            self.drawTrail(screen, pg.Color('darkblue'))
+            pos = screen.Map2Screen(self.mappos, self.root.time)
+        elif sector and not self.root is self.root.main.world:
+            pos = screen.Map2Screen(self.mappos + screen.refsystem.mappos, self.root.time)
+        else:
+            pos = screen.Map2Screen(self.mappos, self.root.time)
+
+        screen.map['BODY'].blit(image, pos - np.array(image.get_size()) * 0.5)
+
         arrow = (self.mapvel-screen.refbody.mapvel)*Astro.AU_kms
         pg.draw.lines(screen.map['TRAIL'], pg.Color("green"), False, [pos, pos+arrow])
 
@@ -86,10 +96,14 @@ class Ship(MinorBody):
         arrow = sign * np.log(np.abs(self.mapacc)*1000 + np.array([1,1])) * 100
         pg.draw.lines(screen.map['TRAIL'], pg.Color("red"), False, [pos, pos+arrow])
 
-#        acc = self.main.world.activesystem.Acc(self.Screen2Map(pos))
-#        acc = 1000000 * np.log(acc + np.array([1, 1]))
-#        endpos = self.mappos + self.mapacc
-        #if self.Contains(endpos) and self.Contains(pos):
+    def drawTrail(self, screen, color=None):
+        if color is None:
+            color = self.color
+        color.a = 128
+
+        if self.trailpointer > 1:
+            mappos = screen.Map2Screen(self.trail[0:self.trailpointer,1:3], self.trail[0:self.trailpointer,0])
+            pg.draw.lines(screen.map['TRAIL'], color, False, mappos)
 
     def circularize(self,refbody):
         dist = np.linalg.norm(self.mappos - refbody.mappos)
@@ -97,19 +111,29 @@ class Ship(MinorBody):
 
         self.mapvel = refbody.mapvel + vorbit*Screen.Pol2Cart(self.pointing)
 
+    def changeSystem(self, root):
+        self.root = root
+
     def Move(self, dt=0):
+        self.trail[self.trailpointer] = [self.root.time] + list(self.mappos)
+        self.trailpointer = (self.trailpointer + 1) % len(self.trail)
+
         self.acc = self.thrust*Screen.Pol2Cart(self.pointing)
 
         # Leapfrog integration
-        self.mapacc = self.root.nbodyAcc(self.mappos)
+        self.mapacc = self.root.potential(self.mappos)
         velInter = self.mapvel + dt/2.*(self.mapacc + self.acc)
         velComp = self.mapvel + dt*(self.mapacc + self.acc)
 
         self.mappos += dt*velInter
-        self.mapvel = velInter + dt/2.*(self.root.nbodyAcc(self.mappos) + self.acc)
+        self.mapvel = velInter + dt/2.*(self.root.potential(self.mappos) + self.acc)
 
         error = np.sum(np.abs(velComp-self.mapvel))/np.sum(np.abs(velComp))
-        tol = 0.05
+        tol = 0.01
 
         stepsize = self.root.main.stepsize
         self.root.main.stepsize = min(stepsize,0.9*stepsize*max(tol/error,0.3))
+
+        if self.root is not self.root.main.world and np.linalg.norm(self.mappos) > 100:
+            self.mappos = self.root.pack.mappos + self.mappos
+            self.root = self.root.main.world

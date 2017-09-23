@@ -62,18 +62,19 @@ class Body:
         acc = - Astro.G * np.power(np.linalg.norm(diff), -3) * self.mass * diff
         return acc
 
-    def drawTrail(self, screen, orbfrac):
-        self.color.a = 128
+    def drawTrail(self, screen, orbfrac, direction=1, color=None):
+        if color is None:
+            color = self.color
+        color.a = 128
         length = min(self.root.main.screen.refbody.torbit * orbfrac, self.torbit * orbfrac)
-        times = np.linspace(self.root.time - length, self.root.time, 100 * orbfrac)
+        times = np.linspace(self.root.time - direction*length, self.root.time, 100 * orbfrac)
         mappos = screen.Map2Screen(self.MapPos(times), times)
-        pg.draw.lines(screen.map['TRAIL'], self.color, False, mappos)
-        self.color.a = 255
+        pg.draw.lines(screen.map['TRAIL'], color, False, mappos)
 
-    def drawVelocity(self, screen):
+    def drawVelocity(self, screen, color=pg.Color("white")):
         arrow = (self.mapvel-screen.refbody.mapvel)*Astro.AU_kms
         pos = screen.Map2Screen(self.mappos, self.root.time)
-        pg.draw.lines(screen.map['TRAIL'], pg.Color("darkgreen"), False, [pos,pos+arrow])
+        pg.draw.lines(screen.map['TRAIL'], color, False, [pos,pos+arrow])
 
     def getClosest(self, mappos):
         refbodies = [body.getClosest(mappos) for body in self.child] + self.child + [self]
@@ -298,7 +299,8 @@ class Planet(Body):
                     moon.Draw(screen)
 
         self.drawTrail(screen, 0.25)
-        self.drawVelocity(screen)
+        self.drawTrail(screen, 0.1, -1, pg.Color('darkgreen'))
+        self.drawVelocity(screen, pg.Color('green'))
 
         image = pg.transform.rotozoom(
             self.image, -self.cylpos[PHI] / (2 * np.pi) * 360, screen.planetscale * self.radius)

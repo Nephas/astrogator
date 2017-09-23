@@ -29,7 +29,7 @@ class PackedSystem:
 
         self.mappos = np.array([0, 0])
         self.mapstart = pack.mappos
-        self.mapvel = np.array([np.random.normal(), np.random.normal()])
+        self.mapvel = 0.1*np.array([np.random.normal(), np.random.normal()])
 
         self.main = pack.main
         self.name = pack.name
@@ -44,6 +44,7 @@ class PackedSystem:
     def Unpack(self):
         """Unpack the system, returning a full scale System() object"""
         system = RootSystem(self.main, mass=self.mass, mappos=self.mappos)
+        system.pack = self
         rd.seed(self.seed)
         np.random.seed(self.seed)
 
@@ -202,6 +203,7 @@ class RootSystem(System):
         System.__init__(self, mass, name, cylpos=[0, 0], rank=0)
         self.main = main
         self.root = self
+        self.pack = None
         self.time = main.world.time
         self.mappos = mappos
         self.mapvel = np.array([0.,0.])
@@ -270,7 +272,7 @@ class RootSystem(System):
         else:
             return self.mappos
 
-    def nbodyAcc(self, mappos):
+    def potential(self, mappos):
         mass = np.array(map(lambda mb: mb[1], self.major))
 
         pos = np.ndarray((len(self.major), 2))

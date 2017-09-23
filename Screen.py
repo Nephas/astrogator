@@ -76,7 +76,8 @@ class Screen:
                                         "Time: {:.2f} days".format(self.main.world.time),
                                         "Mapscale: {:.2f} AU/px".format(self.mapscale),
                                         "Focus: " + self.refbody.name,
-                                        "Mass: {:.2f} M*".format(self.refbody.mass)]
+                                        "Mass: {:.2f} M*".format(self.refbody.mass),
+                                        "Velocity: {:.2f} km/s".format(Astro.AU_kms*np.linalg.norm(self.playership.mapvel))]
 
         for title in self.windows:
             self.windows[title].Render(self.gui)

@@ -63,20 +63,27 @@ class Sector:
         self.main.screen.refbody = self.activesystem
         self.main.screen.refsystem = self.refsystem
         self.main.screen.playership = ship
+        self.playership = ship
 
     def Draw(self, screen):
         if screen.mapscale < Screen.SYSTEMTHRESHOLD:
             for system in self.system:
                 system.Draw(screen)
+            self.playership.Draw(screen, True)
         else:
             for body in self.main.screen.refbody.getHierarchy():
                 body.Draw(screen)
-        for body in self.activesystem.minor:
-            body.Draw(screen)
+            self.playership.Draw(screen)
+#            for body in self.activesystem.minor:
+#                body.Draw(screen)
+
+    def potential(self, mappos):
+        return np.array([0.0,0.0])
 
     def Move(self, dt):
         self.time += dt
-        self.activesystem.Move(dt)
+        if self.activesystem is not None:
+            self.activesystem.Move(dt)
         for system in self.system:
             system.Move()
 
@@ -91,7 +98,7 @@ class Sector:
 
     def getClosest(self, mappos):
         """Return the closest system if in sector view, or the closest body when in system view"""
-        if self.main.screen.mapscale < Screen.SYSTEMTHRESHOLD:
+        if self.main.screen.mapscale < Screen.SYSTEMTHRESHOLD or self.activesystem is None:
             dists = [np.linalg.norm((mappos - system.mappos))
                      for system in self.system]
             i = np.argmin(dists)
